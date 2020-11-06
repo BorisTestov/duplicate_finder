@@ -1,0 +1,10 @@
+#pragma once
+
+#include <string>
+#include <sstream>
+
+#define PROJECT_VERSION_PATCH @PROJECT_VERSION_PATCH@
+#define PROJECT_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define PROJECT_VERSION_MINOR @PROJECT_VERSION_MINOR@
+
+std::string version();
