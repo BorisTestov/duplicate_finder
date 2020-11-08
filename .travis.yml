@@ -36,7 +36,11 @@ deploy:
     skip_cleanup: true
     script:
     - curl -T $PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb -uboristestov:$BINTRAY_API_KEY "https://api.bintray.com/content/boristestov/$PROJECT_NAME/$PACKAGE_NAME/$TRAVIS_BUILD_NUMBER/$PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb;deb_distribution=trusty;deb_component=main;deb_architecture=amd64;publish=1"
+    on:
+      tags: false
   - provider: releases
     api_key: $GITHUB_TOKEN
     file: $PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb
     skip_cleanup: true
+    on:
+      tags: false
