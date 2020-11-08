@@ -1,46 +1,43 @@
 env:
-- PROJECT_NAME=duplicate_finder PACKAGE_NAME=main MAJOR=0 MINOR=0
+  - PROJECT_NAME=duplicate_finder PACKAGE_NAME=main MAJOR=0 MINOR=0
 language: cpp
 dist: bionic
+if: branch = master AND tag IS blank
 before_script:
-- echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
-- sudo apt-get update -qq
-- sudo apt-get install qtbase5-dev qt5-default qttools5-dev libdbus-1-3 libxkbcommon-x11-0 xvfb gcc-7 g++-7 doxygen graphviz libgtest-dev -y
-- cd /usr/src/gtest/ && sudo env "PATH=$PATH" cmake . && sudo env "PATH=$PATH" make
-- sudo cp libgtest.a libgtest_main.a /usr/lib && cd -
-- sudo add-apt-repository ppa:mhier/libboost-latest -y
-- sudo apt-get install libboost1.70-dev -y
+  - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
+  - sudo apt-get update -qq
+  - sudo apt-get install qtbase5-dev qt5-default qttools5-dev libdbus-1-3 libxkbcommon-x11-0 xvfb gcc-7 g++-7 doxygen graphviz libgtest-dev -y
+  - cd /usr/src/gtest/ && sudo env "PATH=$PATH" cmake . && sudo env "PATH=$PATH" make
+  - sudo cp libgtest.a libgtest_main.a /usr/lib && cd -
+  - sudo add-apt-repository ppa:mhier/libboost-latest -y
+  - sudo apt-get install libboost1.70-dev -y
 script:
-- doxygen doxyfile.conf
-- mkdir -p build
-- cd build
-- cmake ..
-- cmake --build .
-- make test
-- cmake --build . --target package
-- git clone https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git
-- cd $PROJECT_NAME.github.io
-- git rm -rf * || echo "Nothing to delete"
-- mv -v ../../doc/html/* .
-- git add .
-- git commit -m "Documentation from travis-ci build $TRAVIS_BUILD_NUMBER" && git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git || echo "Nothing to commit"
-- cd ..
-- sudo rm -rf $PROJECT_NAME.github.io
+  - doxygen doxyfile.conf
+  - mkdir -p build
+  - cd build
+  - cmake ..
+  - cmake --build .
+  - make test
+  - cmake --build . --target package
+  - git clone https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git
+  - cd $PROJECT_NAME.github.io
+  - git rm -rf * || echo "Nothing to delete"
+  - mv -v ../../doc/html/* .
+  - git add .
+  - git commit -m "Documentation from travis-ci build $TRAVIS_BUILD_NUMBER" && git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git || echo "Nothing to commit"
+  - cd ..
+  - sudo rm -rf $PROJECT_NAME.github.io
 before_deploy:
   - git config --local user.name "boristestov"
   - git config --local user.email "boris.testov@gmail.com"
-  - git tag 0.0.$TRAVIS_BUILD_NUMBER
+  - git tag $MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER
   - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
 deploy:
   - provider: script
     skip_cleanup: true
     script:
-    - curl -T $PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb -uboristestov:$BINTRAY_API_KEY "https://api.bintray.com/content/boristestov/$PROJECT_NAME/$PACKAGE_NAME/$TRAVIS_BUILD_NUMBER/$PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb;deb_distribution=trusty;deb_component=main;deb_architecture=amd64;publish=1"
-    on:
-      tags: false
+      - curl -T $PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb -uboristestov:$BINTRAY_API_KEY "https://api.bintray.com/content/boristestov/$PROJECT_NAME/$PACKAGE_NAME/$TRAVIS_BUILD_NUMBER/$PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb;deb_distribution=trusty;deb_component=main;deb_architecture=amd64;publish=1"
   - provider: releases
     api_key: $GITHUB_TOKEN
     file: $PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb
     skip_cleanup: true
-    on:
-      tags: false
