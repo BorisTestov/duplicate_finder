@@ -30,7 +30,7 @@ script:
 before_deploy:
   - git config --local user.name "boristestov"
   - git config --local user.email "boris.testov@gmail.com"
-  - git tag $MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER
+  - git tag $MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER --force
   - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
 deploy:
   - provider: script
