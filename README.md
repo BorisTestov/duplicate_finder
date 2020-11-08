@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.com/BorisTestov/duplicate_finder.svg?branch=master)](https://travis-ci.com/BorisTestov/duplicate_finder)
+![Bintray](https://img.shields.io/bintray/v/boristestov/duplicate_finder/main)
+![GitHub last commit](https://img.shields.io/github/last-commit/boristestov/duplicate_finder)
 
 Otus cpp course project
 
