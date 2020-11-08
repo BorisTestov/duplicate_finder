@@ -1,5 +1,5 @@
 env:
-  - PROJECT_NAME=duplicate_finder PACKAGE_NAME=main MAJOR=0 MINOR=0
+  - PROJECT_NAME=duplicate_finder PACKAGE_NAME=main MAJOR=0 MINOR=1
 language: cpp
 dist: bionic
 if: branch = master AND tag IS blank
