@@ -1,9 +1,11 @@
-if (NOT DEFINED ENV{MAJOR})
-    set(MAJOR "0")
+set(MAJOR "0")
+if (DEFINED ENV{MAJOR})
+    set(MAJOR $ENV{MAJOR})
 endif ()
 
-if (NOT DEFINED ENV{MINOR})
-    set(MINOR "0")
+set(MINOR "0")
+if (DEFINED ENV{MINOR})
+    set(MINOR $ENV{MINOR})
 endif ()
 
 set(PATCH "0")
