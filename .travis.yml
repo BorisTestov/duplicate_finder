@@ -1,5 +1,5 @@
 env:
-- PROJECT_NAME=duplicate_finder PACKAGE_NAME=main
+- PROJECT_NAME=duplicate_finder PACKAGE_NAME=main MAJOR=0 MINOR=0
 language: cpp
 dist: bionic
 before_script:
@@ -30,16 +30,13 @@ before_deploy:
   - git config --local user.name "boristestov"
   - git config --local user.email "boris.testov@gmail.com"
   - git tag 0.0.$TRAVIS_BUILD_NUMBER
+  - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
 deploy:
   - provider: script
     skip_cleanup: true
     script:
-    - curl -T $PROJECT_NAME-0.0.$TRAVIS_BUILD_NUMBER-Linux.deb -uboristestov:$BINTRAY_API_KEY "https://api.bintray.com/content/boristestov/$PROJECT_NAME/$PACKAGE_NAME/$TRAVIS_BUILD_NUMBER/$PROJECT_NAME-0.0.$TRAVIS_BUILD_NUMBER-Linux.deb;deb_distribution=trusty;deb_component=main;deb_architecture=amd64;publish=1"
-    on:
-      tags: true
+    - curl -T $PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb -uboristestov:$BINTRAY_API_KEY "https://api.bintray.com/content/boristestov/$PROJECT_NAME/$PACKAGE_NAME/$TRAVIS_BUILD_NUMBER/$PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb;deb_distribution=trusty;deb_component=main;deb_architecture=amd64;publish=1"
   - provider: releases
     api_key: $GITHUB_TOKEN
-    file: $PROJECT_NAME-0.0.$TRAVIS_BUILD_NUMBER-Linux.deb
+    file: $PROJECT_NAME-$MAJOR.$MINOR.$TRAVIS_BUILD_NUMBER-Linux.deb
     skip_cleanup: true
-    on:
-      tags: true

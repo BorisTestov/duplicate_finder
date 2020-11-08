@@ -1,19 +1,26 @@
-# Set patch value. It's not 0 if build on Travis
+if (NOT DEFINED ENV{MAJOR})
+    set(MAJOR "0")
+endif ()
+
+if (NOT DEFINED ENV{MINOR})
+    set(MINOR "0")
+endif ()
+
 set(PATCH "0")
 if (DEFINED ENV{TRAVIS_BUILD_NUMBER})
     set(PATCH $ENV{TRAVIS_BUILD_NUMBER})
-endif()
+endif ()
 
 set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (DEFINED ENV{PROJECT_NAME})
     set(PROJECT_NAME $ENV{PROJECT_NAME})
-else()
+else ()
     get_filename_component(PROJECT_NAME ${PROJECT_ROOT} ABSOLUTE NAME)
     string(REPLACE " " "_" PROJECT_NAME ${PROJECT_NAME})
     string(REPLACE "/" ";" PROJECT_NAME ${PROJECT_NAME})
     list(GET PROJECT_NAME -1 PROJECT_NAME)
-endif()
+endif ()
 
 # Set automoc for QTest
 set(CMAKE_AUTOMOC ON)
@@ -26,6 +33,6 @@ set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(COMPILE_OPTIONS -Wall -Wextra -pedantic -Werror)
 if (MSVC)
     set(COMPILE_OPTIONS /W4)
-endif()
+endif ()
 
 set(CMAKE_BUILD_TYPE "Release")
