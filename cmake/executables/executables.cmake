@@ -10,8 +10,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 
-file(GLOB SOURCES "${SRC_DIR}/*.cpp")
-file(GLOB HEADERS "${INCLUDE_DIR}/*.h" "${INCLUDE_DIR}/*.hpp")
+file(GLOB SOURCES "${SRC_DIR}/*.cpp" "${SRC_DIR}/gui/*.cpp")
+file(GLOB HEADERS "${INCLUDE_DIR}/*.h" "${INCLUDE_DIR}/gui/*.h")
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets)
