@@ -2,14 +2,22 @@
 
 #include <iostream>
 
-DuplicateFinder::DuplicateFinder(bool searchByHash, bool searchByMeta, std::string hashType) :
+DuplicateFinder::DuplicateFinder(bool searchByHash,
+                                 bool searchByMeta,
+                                 std::string hashType,
+                                 size_t depth,
+                                 unsigned int minSize,
+                                 QStringList includeDirectories,
+                                 QStringList excludeDirectories,
+                                 QStringList includeMasks,
+                                 QStringList excludeMasks) :
     _searchByHash(searchByHash),
     _searchByMeta(searchByMeta),
     _hashType(hashType),
-    _block_size(512),
-    _scan_depth(5),
-    _min_file_size(1)
+    _scan_depth(depth),
+    _min_file_size(minSize)
 {
+    std::cout << "_______________________" << std::endl;
     std::cout << "Duplicate finder created: " << std::endl;
     std::cout << std::boolalpha << "Search by hash: " << _searchByHash << std::endl;
     if (_searchByHash)
@@ -17,6 +25,29 @@ DuplicateFinder::DuplicateFinder(bool searchByHash, bool searchByMeta, std::stri
         std::cout << "Chosen hash type: " << _hashType << std::endl;
     }
     std::cout << std::boolalpha << "Search by metadata: " << _searchByMeta << std::endl;
+    std::cout << "Scan depth: " << _scan_depth << std::endl;
+    std::cout << "Min file size in bytes: " << _min_file_size << std::endl;
+    std::cout << "Include directories: " << std::endl;
+    for (QString& includeDir : includeDirectories)
+    {
+        std::cout << includeDir.toStdString() << std::endl;
+    }
+    std::cout << "Exclude directories: " << std::endl;
+    for (QString& excludeDir : excludeDirectories)
+    {
+        std::cout << excludeDir.toStdString() << std::endl;
+    }
+    std::cout << "Include masks: " << std::endl;
+    for (QString& includeMask : includeMasks)
+    {
+        std::cout << includeMask.toStdString() << std::endl;
+    }
+    std::cout << "Exclude masks: " << std::endl;
+    for (QString& excludeMask : excludeMasks)
+    {
+        std::cout << excludeMask.toStdString() << std::endl;
+    }
+    std::cout << "_______________________" << std::endl;
 }
 
 std::unordered_map<std::string, std::unordered_set<std::string>> DuplicateFinder::Find()

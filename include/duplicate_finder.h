@@ -3,6 +3,7 @@
 #include "hash.h"
 #include "hashed_file.h"
 
+#include <QStringList>
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
 #include <string>
@@ -13,7 +14,15 @@ class DuplicateFinder
 {
 public:
     DuplicateFinder() = delete;
-    DuplicateFinder(bool searchByHash, bool searchByMeta, std::string hashType);
+    DuplicateFinder(bool searchByHash,
+                    bool searchByMeta,
+                    std::string hashType,
+                    size_t depth,
+                    unsigned int minSize,
+                    QStringList includeDirectories,
+                    QStringList excludeDirectories,
+                    QStringList includeMasks,
+                    QStringList excludeMasks);
 
     /**
      * @brief Find duplicate files
@@ -37,9 +46,9 @@ private:
     const std::vector<boost::filesystem::path> _include_dirs;
     const std::vector<boost::filesystem::path> _exclude_dirs;
     const std::vector<boost::regex> _filemasks;
-    const size_t _block_size;
+    const size_t _block_size = 512;
     const size_t _scan_depth;
-    const unsigned int _min_file_size;
+    const unsigned long long int _min_file_size;
     std::shared_ptr<IHash> _hasher;
 
     std::vector<HashedFile> _files;
