@@ -6,7 +6,7 @@
 #include <QShortcut>
 #include <QTreeView>
 
-SearchWindow::SearchWindow(QWidget* parent)
+SearchWindow::SearchWindow()
 {
     _searchByMeta = false;
     _searchByHash = false;
@@ -15,158 +15,46 @@ SearchWindow::SearchWindow(QWidget* parent)
     _minFileSize = "0";
     _minFileSizeDimension = _possibleFileSizeDimensions.at(0);
 
-    setParent(parent);
-    setFixedSize(_minW, _minH);
+    setFixedSize(_windowWidth, _windowHeight);
     setWindowTitle(_windowName);
 
-    _searchButton = new QPushButton("Search", this);
-    _searchButton->setGeometry(0, _minH - 50, _minW, 50);
-    connect(_searchButton, SIGNAL(released()), this, SLOT(runSearch()));
+    createIncludeDirectoriesView();
+    createIncludeDirectoriesLabel();
+    createIncludeDirectoriesButton();
 
-    _selectedDirectoriesView = new QListWidget(this);
-    _selectedDirectoriesView->setGeometry(20, 20, 480, 100);
-    QShortcut* shortcut = new QShortcut(QKeySequence(Qt::Key_Delete),
-                                        _selectedDirectoriesView,
-                                        nullptr,
-                                        nullptr,
-                                        Qt::WidgetShortcut);
-    connect(shortcut, SIGNAL(activated()), this, SLOT(deleteSearchDirectory()));
-    _selectedDirectoriesView->addItems(_includeDirectories);
+    createExcludeDirectoriesView();
+    createExcludeDirectoriesLabel();
+    createExcludeDirectoriesButton();
 
-    _selectedDirectoriesLabel = new QLabel("Directories for scanning", this);
-    _selectedDirectoriesLabel->setGeometry(200, 0, _minW, 20);
+    createIncludeMasksView();
+    createIncludeMasksLabel();
+    createIncludeMasksEdit();
+    createIncludeMasksButton();
+    createIncludeMasksLink();
 
-    _addDirectoriesButton = new QPushButton("Add directories", this);
-    _addDirectoriesButton->setGeometry(520, 40, 100, 40);
-    connect(_addDirectoriesButton, SIGNAL(released()), this, SLOT(addSearchDirectories()));
+    createExcludeMasksView();
+    createExcludeMasksLabel();
+    createExcludeMasksEdit();
+    createExcludeMasksButton();
+    createExcludeMasksLink();
 
-    auto separator = new QFrame(this);
-    separator->setFrameShape(QFrame::HLine);
-    separator->setGeometry(0, 140, _minW, 5);
+    createHashSearchBox();
+    createPossibleHashesComboBox();
 
-    _excludedDirectoriesView = new QListWidget(this);
-    _excludedDirectoriesView->setGeometry(20, 160, 480, 100);
-    QShortcut* excludeShortcut = new QShortcut(QKeySequence(Qt::Key_Delete),
-                                               _excludedDirectoriesView,
-                                               nullptr,
-                                               nullptr,
-                                               Qt::WidgetShortcut);
-    connect(excludeShortcut, SIGNAL(activated()), this, SLOT(deleteExcludeDirectory()));
-    _excludedDirectoriesView->addItems(_excludeDirectories);
+    createMetaSearchBox();
 
-    _excludedDirectoriesLabel = new QLabel("Directories to exclude", this);
-    _excludedDirectoriesLabel->setGeometry(200, 140, _minW, 20);
+    createAdditionalSettingsButton();
 
-    _excludeDirectoriesButton = new QPushButton("Exclude directories", this);
-    _excludeDirectoriesButton->setGeometry(510, 180, 120, 40);
-    connect(_excludeDirectoriesButton, SIGNAL(released()), this, SLOT(addExcludeDirectories()));
+    createSearchDepthLabel();
+    createSearchDepthEdit();
 
-    auto excludeSeparator = new QFrame(this);
-    excludeSeparator->setFrameShape(QFrame::HLine);
-    excludeSeparator->setGeometry(0, 280, _minW, 5);
+    createMinFileSizeLabel();
+    createMinFileSizeEdit();
+    createMinFileSizeDimensionComboBox();
 
-    _includeMasksLabel = new QLabel("Include masks", this);
-    _includeMasksLabel->setGeometry(200, 280, _minW, 20);
+    createSearchButton();
 
-    _includeMasksView = new QListWidget(this);
-    _includeMasksView->setGeometry(20, 300, 440, 100);
-    QShortcut* includeMaskShortcut = new QShortcut(QKeySequence(Qt::Key_Delete),
-                                                   _includeMasksView,
-                                                   nullptr,
-                                                   nullptr,
-                                                   Qt::WidgetShortcut);
-    connect(includeMaskShortcut, SIGNAL(activated()), this, SLOT(deleteIncludeMask()));
-    _includeMasksView->addItems(_includeMasks);
-
-    _addIncludeMaskButton = new QPushButton("Add mask", this);
-    _addIncludeMaskButton->setGeometry(510, 300, 80, 40);
-    connect(_addIncludeMaskButton, SIGNAL(released()), this, SLOT(addIncludeMask()));
-
-    _includeMaskEdit = new QLineEdit(this);
-    _includeMaskEdit->setGeometry(470, 350, 160, 30);
-
-    _howToCreateIncludeMaskLabel = new QLabel("<a href=\"help\">How to create a mask</a>", this);
-    _howToCreateIncludeMaskLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    _howToCreateIncludeMaskLabel->setGeometry(485, 380, 160, 40);
-    _howToCreateIncludeMaskLabel->openExternalLinks();
-    connect(_howToCreateIncludeMaskLabel, SIGNAL(linkActivated(QString)), this, SLOT(openMaskHelp()));
-
-    auto includeMaskSeparator = new QFrame(this);
-    includeMaskSeparator->setFrameShape(QFrame::HLine);
-    includeMaskSeparator->setGeometry(0, 420, _minW, 5);
-
-    _excludeMasksLabel = new QLabel("Exclude masks", this);
-    _excludeMasksLabel->setGeometry(200, 420, _minW, 20);
-
-    _excludeMasksView = new QListWidget(this);
-    _excludeMasksView->setGeometry(20, 440, 440, 100);
-    QShortcut* excludeMaskShortcut = new QShortcut(QKeySequence(Qt::Key_Delete),
-                                                   _excludeMasksView,
-                                                   nullptr,
-                                                   nullptr,
-                                                   Qt::WidgetShortcut);
-    connect(excludeMaskShortcut, SIGNAL(activated()), this, SLOT(deleteExcludeMask()));
-    _excludeMasksView->addItems(_excludeMasks);
-
-    _addExcludeMaskButton = new QPushButton("Add mask", this);
-    _addExcludeMaskButton->setGeometry(510, 440, 80, 40);
-    connect(_addExcludeMaskButton, SIGNAL(released()), this, SLOT(addExcludeMask()));
-
-    _excludeMaskEdit = new QLineEdit(this);
-    _excludeMaskEdit->setGeometry(470, 490, 160, 30);
-
-    _howToCreateExcludeMaskLabel = new QLabel("<a href=\"help\">How to create a mask</a>", this);
-    _howToCreateExcludeMaskLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    _howToCreateExcludeMaskLabel->setGeometry(485, 520, 160, 40);
-    _howToCreateExcludeMaskLabel->openExternalLinks();
-    connect(_howToCreateExcludeMaskLabel, SIGNAL(linkActivated(QString)), this, SLOT(openMaskHelp()));
-
-    auto excludeMaskSeparator = new QFrame(this);
-    excludeMaskSeparator->setFrameShape(QFrame::HLine);
-    excludeMaskSeparator->setGeometry(0, 560, _minW, 5);
-
-    _searchByHashBox = new QCheckBox("Use hash: ", this);
-    _searchByHashBox->setGeometry(40, 580, 90, 20);
-    connect(_searchByHashBox, SIGNAL(clicked(bool)), this, SLOT(toggleHashBox()));
-
-    _searchByMetaBox = new QCheckBox("Search by name and size", this);
-    _searchByMetaBox->setGeometry(40, 600, 200, 20);
-    connect(_searchByMetaBox, SIGNAL(clicked(bool)), this, SLOT(toggleMetaBox()));
-
-    _possibleHashesBox = new QComboBox(this);
-    _possibleHashesBox->addItems(_possibleHashes);
-    _possibleHashesBox->setGeometry(130, 580, 80, 20);
-    connect(_possibleHashesBox, SIGNAL(activated(QString)), this, SLOT(changeHash()));
-
-    _showAdditionalSettings = new QPushButton("Show additional settings", this);
-    _showAdditionalSettings->setGeometry(230, 580, 180, 20);
-    connect(_showAdditionalSettings, SIGNAL(released()), this, SLOT(additionalSettings()));
-
-    _searchDepthEdit = new QLineEdit(this);
-    _searchDepthEdit->setValidator(new QRegExpValidator(QRegExp("[0-9]*")));
-    _searchDepthEdit->setGeometry(480, 610, 50, 20);
-    _searchDepthEdit->setText(_searchDepth);
-    _searchDepthEdit->hide();
-
-    _searchDepthLabel = new QLabel("Search depth (0 - unlimited)", this);
-    _searchDepthLabel->setGeometry(230, 610, 180, 20);
-    _searchDepthLabel->hide();
-
-    _minFileSizeLabel = new QLabel("Min file size (0 - unlimited, max 1Gb)", this);
-    _minFileSizeLabel->setGeometry(230, 650, 230, 20);
-    _minFileSizeLabel->hide();
-
-    _minFileSizeEdit = new QLineEdit(this);
-    _minFileSizeEdit->setValidator(new QRegExpValidator(QRegExp("[0-9]*")));
-    _minFileSizeEdit->setGeometry(480, 650, 50, 20);
-    _minFileSizeEdit->setText(_minFileSize);
-    _minFileSizeEdit->hide();
-
-    _minFileSizeDimensionBox = new QComboBox(this);
-    _minFileSizeDimensionBox->addItems(_possibleFileSizeDimensions);
-    _minFileSizeDimensionBox->setGeometry(530, 650, 50, 20);
-    connect(_minFileSizeDimensionBox, SIGNAL(activated(QString)), this, SLOT(changeFileSizeDimension()));
-    _minFileSizeDimensionBox->hide();
+    createSeparators();
 }
 
 QStringList SearchWindow::chooseDirectories()
@@ -174,15 +62,15 @@ QStringList SearchWindow::chooseDirectories()
     QFileDialog dialog;
     dialog.setFileMode(QFileDialog::DirectoryOnly);
     dialog.setOption(QFileDialog::ShowDirsOnly, true);
-    QListView* l = dialog.findChild<QListView*>("listView");
-    if (l)
+    auto list = dialog.findChild<QListView*>("listView");
+    if (list)
     {
-        l->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        list->setSelectionMode(QAbstractItemView::ExtendedSelection);
     }
-    QTreeView* t = dialog.findChild<QTreeView*>();
-    if (t)
+    auto tree = dialog.findChild<QTreeView*>();
+    if (tree)
     {
-        t->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        tree->setSelectionMode(QAbstractItemView::ExtendedSelection);
     }
     QStringList directories;
     if (dialog.exec())
@@ -190,6 +78,237 @@ QStringList SearchWindow::chooseDirectories()
         directories = dialog.selectedFiles();
     }
     return directories;
+}
+
+void SearchWindow::createIncludeDirectoriesView()
+{
+    _includeDirectoriesView = new QListWidget(this);
+    _includeDirectoriesView->setGeometry(20, 20, 480, 100);
+    QPointer<QShortcut> shortcut = new QShortcut(QKeySequence(Qt::Key_Delete),
+                                                 _includeDirectoriesView.data(),
+                                                 nullptr,
+                                                 nullptr,
+                                                 Qt::WidgetShortcut);
+    connect(shortcut, SIGNAL(activated()), this, SLOT(deleteSearchDirectory()));
+    _includeDirectoriesView->addItems(_includeDirectories);
+}
+
+void SearchWindow::createIncludeDirectoriesLabel()
+{
+    _includeDirectoriesLabel = new QLabel("Directories for scanning", this);
+    _includeDirectoriesLabel->setGeometry(200, 0, _windowWidth, 20);
+}
+
+void SearchWindow::createIncludeDirectoriesButton()
+{
+    _includeDirectoriesButton = new QPushButton("Add directories", this);
+    _includeDirectoriesButton->setGeometry(520, 40, 100, 40);
+    connect(_includeDirectoriesButton.data(), SIGNAL(released()), this, SLOT(addSearchDirectories()));
+}
+
+void SearchWindow::createExcludeDirectoriesView()
+{
+    _excludedDirectoriesView = new QListWidget(this);
+    _excludedDirectoriesView->setGeometry(20, 160, 480, 100);
+    QPointer<QShortcut> shortcut = new QShortcut(QKeySequence(Qt::Key_Delete),
+                                                 _excludedDirectoriesView.data(),
+                                                 nullptr,
+                                                 nullptr,
+                                                 Qt::WidgetShortcut);
+    connect(shortcut, SIGNAL(activated()), this, SLOT(deleteExcludeDirectory()));
+    _excludedDirectoriesView->addItems(_excludeDirectories);
+}
+
+void SearchWindow::createExcludeDirectoriesLabel()
+{
+    _excludedDirectoriesLabel = new QLabel("Directories to exclude", this);
+    _excludedDirectoriesLabel->setGeometry(200, 140, _windowWidth, 20);
+}
+
+void SearchWindow::createExcludeDirectoriesButton()
+{
+    _excludeDirectoriesButton = new QPushButton("Exclude directories", this);
+    _excludeDirectoriesButton->setGeometry(510, 180, 120, 40);
+    connect(_excludeDirectoriesButton.data(), SIGNAL(released()), this, SLOT(addExcludeDirectories()));
+}
+
+void SearchWindow::createIncludeMasksView()
+{
+    _includeMasksView = new QListWidget(this);
+    _includeMasksView->setParent(this);
+    _includeMasksView->setGeometry(20, 300, 440, 100);
+    QPointer<QShortcut> shortcut = new QShortcut(QKeySequence(Qt::Key_Delete),
+                                                 _includeMasksView.data(),
+                                                 nullptr,
+                                                 nullptr,
+                                                 Qt::WidgetShortcut);
+    connect(shortcut, SIGNAL(activated()), this, SLOT(deleteIncludeMask()));
+    _includeMasksView->addItems(_includeMasks);
+}
+
+void SearchWindow::createIncludeMasksLabel()
+{
+    _includeMasksLabel = new QLabel("Include masks", this);
+    _includeMasksLabel->setGeometry(200, 280, _windowWidth, 20);
+}
+
+void SearchWindow::createIncludeMasksEdit()
+{
+    _includeMasksEdit = new QLineEdit(this);
+    _includeMasksEdit->setGeometry(470, 350, 160, 30);
+}
+
+void SearchWindow::createIncludeMasksButton()
+{
+    _includeMasksButton = new QPushButton("Add mask", this);
+    _includeMasksButton->setGeometry(510, 300, 80, 40);
+    connect(_includeMasksButton.data(), SIGNAL(released()), this, SLOT(addIncludeMask()));
+}
+
+void SearchWindow::createIncludeMasksLink()
+{
+    _includeMasksLink = new QLabel("<a href=\"help\">How to create a mask</a>", this);
+    _includeMasksLink->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    _includeMasksLink->setGeometry(485, 380, 160, 40);
+    _includeMasksLink->openExternalLinks();
+    connect(_includeMasksLink.data(), SIGNAL(linkActivated(QString)), this, SLOT(openMaskHelp()));
+}
+
+void SearchWindow::createExcludeMasksView()
+{
+    _excludeMasksView = new QListWidget(this);
+    _excludeMasksView->setGeometry(20, 440, 440, 100);
+    QPointer<QShortcut> shortcut = new QShortcut(QKeySequence(Qt::Key_Delete),
+                                                 _excludeMasksView.data(),
+                                                 nullptr,
+                                                 nullptr,
+                                                 Qt::WidgetShortcut);
+    connect(shortcut, SIGNAL(activated()), this, SLOT(deleteExcludeMask()));
+    _excludeMasksView->addItems(_excludeMasks);
+}
+
+void SearchWindow::createExcludeMasksLabel()
+{
+    _excludeMasksLabel = new QLabel("Exclude masks", this);
+    _excludeMasksLabel->setGeometry(200, 420, _windowWidth, 20);
+}
+
+void SearchWindow::createExcludeMasksEdit()
+{
+    _excludeMasksEdit = new QLineEdit(this);
+    _excludeMasksEdit->setGeometry(470, 490, 160, 30);
+}
+
+void SearchWindow::createExcludeMasksButton()
+{
+    _excludeMasksButton = new QPushButton("Add mask", this);
+    _excludeMasksButton->setGeometry(510, 440, 80, 40);
+    connect(_excludeMasksButton.data(), SIGNAL(released()), this, SLOT(addExcludeMask()));
+}
+
+void SearchWindow::createExcludeMasksLink()
+{
+    _excludeMasksLink = new QLabel("<a href=\"help\">How to create a mask</a>", this);
+    _excludeMasksLink->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    _excludeMasksLink->setGeometry(485, 520, 160, 40);
+    _excludeMasksLink->openExternalLinks();
+    connect(_excludeMasksLink.data(), SIGNAL(linkActivated(QString)), this, SLOT(openMaskHelp()));
+}
+
+void SearchWindow::createHashSearchBox()
+{
+    _hashSearchBox = new QCheckBox("Use hash: ", this);
+    _hashSearchBox->setGeometry(40, 580, 90, 20);
+    connect(_hashSearchBox.data(), SIGNAL(clicked(bool)), this, SLOT(toggleHashBox()));
+}
+
+void SearchWindow::createPossibleHashesComboBox()
+{
+    _possibleHashesComboBox = new QComboBox(this);
+    _possibleHashesComboBox->addItems(_possibleHashes);
+    _possibleHashesComboBox->setGeometry(130, 580, 80, 20);
+    connect(_possibleHashesComboBox.data(), SIGNAL(activated(QString)), this, SLOT(changeHash()));
+}
+
+void SearchWindow::createMetaSearchBox()
+{
+    _metaSearchBox = new QCheckBox("Search by name and size", this);
+    _metaSearchBox->setGeometry(40, 600, 200, 20);
+    connect(_metaSearchBox.data(), SIGNAL(clicked(bool)), this, SLOT(toggleMetaBox()));
+}
+
+void SearchWindow::createAdditionalSettingsButton()
+{
+    _additionalSettingsButton = new QPushButton("Show additional settings", this);
+    _additionalSettingsButton->setGeometry(230, 580, 180, 20);
+    connect(_additionalSettingsButton.data(), SIGNAL(released()), this, SLOT(toggleAdditionalSettings()));
+}
+
+void SearchWindow::createSearchDepthLabel()
+{
+    _searchDepthLabel = new QLabel("Search depth (0 - unlimited)", this);
+    _searchDepthLabel->setGeometry(230, 610, 180, 20);
+    _searchDepthLabel->hide();
+}
+
+void SearchWindow::createSearchDepthEdit()
+{
+    _searchDepthEdit = new QLineEdit(this);
+    _searchDepthEdit->setValidator(new QRegExpValidator(QRegExp("[0-9]*")));
+    _searchDepthEdit->setGeometry(480, 610, 50, 20);
+    _searchDepthEdit->setText(_searchDepth);
+    _searchDepthEdit->hide();
+}
+
+void SearchWindow::createMinFileSizeLabel()
+{
+    _minFileSizeLabel = new QLabel("Min file size (0 - unlimited, max 1Gb)", this);
+    _minFileSizeLabel->setGeometry(230, 650, 230, 20);
+    _minFileSizeLabel->hide();
+}
+
+void SearchWindow::createMinFileSizeEdit()
+{
+    _minFileSizeEdit = new QLineEdit(this);
+    _minFileSizeEdit->setValidator(new QRegExpValidator(QRegExp("[0-9]*")));
+    _minFileSizeEdit->setGeometry(480, 650, 50, 20);
+    _minFileSizeEdit->setText(_minFileSize);
+    _minFileSizeEdit->hide();
+}
+
+void SearchWindow::createMinFileSizeDimensionComboBox()
+{
+    _minFileSizeDimensionComboBox = new QComboBox(this);
+    _minFileSizeDimensionComboBox->addItems(_possibleFileSizeDimensions);
+    _minFileSizeDimensionComboBox->setGeometry(530, 650, 50, 20);
+    connect(_minFileSizeDimensionComboBox.data(), SIGNAL(activated(QString)), this, SLOT(changeFileSizeDimension()));
+    _minFileSizeDimensionComboBox->hide();
+}
+
+void SearchWindow::createSearchButton()
+{
+    _searchButton = new QPushButton("Search", this);
+    _searchButton->setGeometry(0, _windowHeight - 50, _windowWidth, 50);
+    connect(_searchButton.data(), SIGNAL(released()), this, SLOT(runSearch()));
+}
+
+void SearchWindow::createSeparators()
+{
+    QPointer<QFrame> includeSeparator = new QFrame(this);
+    includeSeparator->setFrameShape(QFrame::HLine);
+    includeSeparator->setGeometry(0, 140, _windowWidth, 5);
+
+    QPointer<QFrame> excludeSeparator = new QFrame(this);
+    excludeSeparator->setFrameShape(QFrame::HLine);
+    excludeSeparator->setGeometry(0, 280, _windowWidth, 5);
+
+    QPointer<QFrame> includeMaskSeparator = new QFrame(this);
+    includeMaskSeparator->setFrameShape(QFrame::HLine);
+    includeMaskSeparator->setGeometry(0, 420, _windowWidth, 5);
+
+    QPointer<QFrame> excludeMaskSeparator = new QFrame(this);
+    excludeMaskSeparator->setFrameShape(QFrame::HLine);
+    excludeMaskSeparator->setGeometry(0, 560, _windowWidth, 5);
 }
 
 void SearchWindow::addSearchDirectories()
@@ -200,9 +319,20 @@ void SearchWindow::addSearchDirectories()
         if (not _includeDirectories.contains(directory))
         {
             _includeDirectories.append(directory);
-            _selectedDirectoriesView->addItem(directory);
+            _includeDirectoriesView->addItem(directory);
         }
     }
+}
+
+void SearchWindow::deleteSearchDirectory()
+{
+    if (_includeDirectories.empty())
+    {
+        return;
+    }
+    auto item = _includeDirectoriesView->currentItem();
+    _includeDirectories.removeOne(item->text());
+    delete _includeDirectoriesView->currentItem();
 }
 
 void SearchWindow::addExcludeDirectories()
@@ -218,20 +348,9 @@ void SearchWindow::addExcludeDirectories()
     }
 }
 
-void SearchWindow::deleteSearchDirectory()
-{
-    if (_includeDirectories.size() == 0)
-    {
-        return;
-    }
-    auto item = _selectedDirectoriesView->currentItem();
-    _includeDirectories.removeOne(item->text());
-    delete _selectedDirectoriesView->currentItem();
-}
-
 void SearchWindow::deleteExcludeDirectory()
 {
-    if (_excludeDirectories.size() == 0)
+    if (_excludeDirectories.empty())
     {
         return;
     }
@@ -240,19 +359,107 @@ void SearchWindow::deleteExcludeDirectory()
     delete _excludedDirectoriesView->currentItem();
 }
 
+void SearchWindow::addIncludeMask()
+{
+    auto mask = _includeMasksEdit->text();
+    if (mask == "")
+    {
+        return;
+    }
+    if (not _includeMasks.contains(mask))
+    {
+        _includeMasks.append(mask);
+        _includeMasksView->addItem(mask);
+    }
+    _includeMasksEdit->setText("");
+}
+
+void SearchWindow::deleteIncludeMask()
+{
+    if (_includeMasks.empty())
+    {
+        return;
+    }
+    auto item = _includeMasksView->currentItem();
+    _includeMasks.removeOne(item->text());
+    delete _includeMasksView->currentItem();
+}
+
+void SearchWindow::addExcludeMask()
+{
+    auto mask = _excludeMasksEdit->text();
+    if (mask == "")
+    {
+        return;
+    }
+    if (not _excludeMasks.contains(mask))
+    {
+        _excludeMasks.append(mask);
+        _excludeMasksView->addItem(mask);
+    }
+    _excludeMasksEdit->setText("");
+}
+
+void SearchWindow::deleteExcludeMask()
+{
+    if (_excludeMasks.empty())
+    {
+        return;
+    }
+    auto item = _excludeMasksView->currentItem();
+    _excludeMasks.removeOne(item->text());
+    delete _excludeMasksView->currentItem();
+}
+
 void SearchWindow::toggleHashBox()
 {
-    _searchByHash = _searchByHashBox->isChecked();
+    _searchByHash = _hashSearchBox->isChecked();
 }
 
 void SearchWindow::toggleMetaBox()
 {
-    _searchByMeta = _searchByMetaBox->isChecked();
+    _searchByMeta = _metaSearchBox->isChecked();
+}
+
+void SearchWindow::changeHash()
+{
+    _hashType = _possibleHashesComboBox->currentText();
+}
+
+void SearchWindow::toggleAdditionalSettings()
+{
+    if (_searchDepthEdit->isHidden())
+    {
+        _searchDepthEdit->show();
+        _searchDepthLabel->show();
+        _minFileSizeLabel->show();
+        _minFileSizeEdit->show();
+        _minFileSizeDimensionComboBox->show();
+        _additionalSettingsButton->setText("Hide additional settings");
+    }
+    else
+    {
+        _searchDepthEdit->hide();
+        _searchDepthLabel->hide();
+        _minFileSizeLabel->hide();
+        _minFileSizeEdit->hide();
+        _minFileSizeDimensionComboBox->hide();
+        _additionalSettingsButton->setText("Show additional settings");
+    }
+}
+
+void SearchWindow::changeFileSizeDimension()
+{
+    _minFileSizeDimension = _minFileSizeDimensionComboBox->currentText();
+}
+void SearchWindow::openMaskHelp()
+{
+    QDesktopServices::openUrl(QUrl("https://www.boost.org/doc/libs/1_31_0/libs/regex/doc/syntax.html"));
 }
 
 void SearchWindow::runSearch()
 {
-    if (_includeDirectories.size() == 0)
+    if (_includeDirectories.empty())
     {
         return;
     }
@@ -260,7 +467,7 @@ void SearchWindow::runSearch()
     {
         _searchDepth = _searchDepthEdit->text();
         _minFileSize = _minFileSizeEdit->text();
-        _minFileSizeDimension = _minFileSizeDimensionBox->currentText();
+        _minFileSizeDimension = _minFileSizeDimensionComboBox->currentText();
         const int BYTES_IN_KB = 1024;
         const int KB_IN_MB = 1024;
         const int MB_IN_GB = 1024;
@@ -307,94 +514,6 @@ void SearchWindow::runSearch()
                                _excludeDirectories,
                                _includeMasks,
                                _excludeMasks);
+        finder.Find();
     }
-}
-
-void SearchWindow::changeHash()
-{
-    _hashType = _possibleHashesBox->currentText();
-}
-
-void SearchWindow::additionalSettings()
-{
-    if (_searchDepthEdit->isHidden())
-    {
-        _searchDepthEdit->show();
-        _searchDepthLabel->show();
-        _minFileSizeLabel->show();
-        _minFileSizeEdit->show();
-        _minFileSizeDimensionBox->show();
-        _showAdditionalSettings->setText("Hide additional settings");
-    }
-    else
-    {
-        _searchDepthEdit->hide();
-        _searchDepthLabel->hide();
-        _minFileSizeLabel->hide();
-        _minFileSizeEdit->hide();
-        _minFileSizeDimensionBox->hide();
-        _showAdditionalSettings->setText("Show additional settings");
-    }
-}
-
-void SearchWindow::changeFileSizeDimension()
-{
-    _minFileSizeDimension = _minFileSizeDimensionBox->currentText();
-}
-
-void SearchWindow::deleteIncludeMask()
-{
-    if (_includeMasks.size() == 0)
-    {
-        return;
-    }
-    auto item = _includeMasksView->currentItem();
-    _includeMasks.removeOne(item->text());
-    delete _includeMasksView->currentItem();
-}
-
-void SearchWindow::deleteExcludeMask()
-{
-    if (_excludeMasks.size() == 0)
-    {
-        return;
-    }
-    auto item = _excludeMasksView->currentItem();
-    _excludeMasks.removeOne(item->text());
-    delete _excludeMasksView->currentItem();
-}
-
-void SearchWindow::addIncludeMask()
-{
-    auto mask = _includeMaskEdit->text();
-    if (mask == "")
-    {
-        return;
-    }
-    if (not _includeMasks.contains(mask))
-    {
-        _includeMasks.append(mask);
-        _includeMasksView->addItem(mask);
-    }
-    _includeMaskEdit->setText("");
-}
-
-void SearchWindow::addExcludeMask()
-{
-    auto mask = _excludeMaskEdit->text();
-    if (mask == "")
-    {
-        return;
-    }
-    if (not _excludeMasks.contains(mask))
-    {
-        _excludeMasks.append(mask);
-        _excludeMasksView->addItem(mask);
-    }
-    _excludeMaskEdit->setText("");
-}
-
-void SearchWindow::openMaskHelp()
-{
-    QDesktopServices::openUrl(QUrl("https://www.boost.org/doc/libs/1_31_0/libs/regex/doc/syntax.html"));
 }
