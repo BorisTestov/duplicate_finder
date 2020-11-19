@@ -19,10 +19,10 @@ public:
                     std::string hashType,
                     size_t depth,
                     unsigned int minSize,
-                    QStringList includeDirectories,
-                    QStringList excludeDirectories,
-                    QStringList includeMasks,
-                    QStringList excludeMasks);
+                    const QStringList& includeDirectories,
+                    const QStringList& excludeDirectories,
+                    const QStringList& includeMasks,
+                    const QStringList& excludeMasks);
 
     /**
      * @brief Find duplicate files
@@ -30,22 +30,15 @@ public:
      */
     std::unordered_map<std::string, std::unordered_set<std::string>> Find();
 
-    /**
-     * @brief Set directories from vector of strings
-     * @param dirs - vector of paths to directories
-     * @throw std::runtime_error if one of directories doesn't exists
-     * @return vector of boost paths
-     */
-    std::vector<boost::filesystem::path> TrySetDirs(const std::vector<std::string>& dirs);
-
 private:
     bool _searchByHash;
     bool _searchByMeta;
     std::string _hashType;
 
-    const std::vector<boost::filesystem::path> _include_dirs;
-    const std::vector<boost::filesystem::path> _exclude_dirs;
-    const std::vector<boost::regex> _filemasks;
+    std::vector<boost::filesystem::path> _include_dirs;
+    std::vector<boost::filesystem::path> _exclude_dirs;
+    std::vector<boost::regex> _includeMasks;
+    std::vector<boost::regex> _excludeMasks;
     const size_t _block_size = 512;
     const size_t _scan_depth;
     const unsigned long long int _min_file_size;
@@ -53,6 +46,16 @@ private:
 
     std::vector<HashedFile> _files;
     std::unordered_set<std::string> _scanned_file_paths;
+
+    std::multimap<uintmax_t, HashedFile> sizeMap;
+
+    /**
+    * @brief Set directories from vector of strings
+    * @param dirs - vector of paths to directories
+    * @throw std::runtime_error if one of directories doesn't exists
+    * @return vector of boost paths
+    */
+    std::vector<boost::filesystem::path> TrySetDirs(const std::vector<std::string>& dirs);
 
     /**
      * @brief Set hasher type for scanning
@@ -63,20 +66,39 @@ private:
     std::shared_ptr<IHash> TrySetHasher(const std::string& hasher);
 
     /**
-     * @brief Set filemasks for scanning
-     * @param filemasks - vector of filemasks as std::string
-     * @return vector of filemasks as boost::regex
+     * @brief Scan directory
+     * @param path - path to scanning
+     * @param depth - depth of scanning, 0 - unlimited
      */
-    std::vector<boost::regex> SetFileMasks(const std::vector<std::string>& filemasks);
-
     void ScanPath(const boost::filesystem::path& path, size_t depth);
 
+    /**
+     * @brief Add file to analyzing
+     * @param path - path to file
+     */
     void AddFile(const boost::filesystem::path& path);
 
+    /**
+     * @brief Check if scanned path in excluded directories
+     * @param path - path to check
+     * @return true if path in excluded dirs, otherwise false
+     */
     bool InExcludeDirs(const boost::filesystem::path& path);
 
-    bool MasksSatisfied(const boost::filesystem::path& path);
+    /**
+     * @brief Check if path satisfied at least one mask from vector
+     * @param path - path to file
+     * @param masksToCheck  - vector of masks to check
+     * @return true if satisfied, otherwise false
+     */
+    bool MasksSatisfied(const boost::filesystem::path& path, const std::vector<boost::regex>& masksToCheck);
 
+    /**
+     * @brief Check if file was already in duplicates
+     * @param path - path to file to check
+     * @param duplicates - duplicate that was found earlier
+     * @return true if file already in duplicates, otherwise false
+     */
     bool AlreadyInDuplicates(const boost::filesystem::path& path,
                              std::unordered_map<std::string, std::unordered_set<std::string>>& duplicates);
 };

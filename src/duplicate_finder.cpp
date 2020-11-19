@@ -1,53 +1,48 @@
 #include "duplicate_finder.h"
 
 #include <iostream>
+#include <utility>
 
 DuplicateFinder::DuplicateFinder(bool searchByHash,
                                  bool searchByMeta,
                                  std::string hashType,
                                  size_t depth,
                                  unsigned int minSize,
-                                 QStringList includeDirectories,
-                                 QStringList excludeDirectories,
-                                 QStringList includeMasks,
-                                 QStringList excludeMasks) :
+                                 const QStringList& includeDirectories,
+                                 const QStringList& excludeDirectories,
+                                 const QStringList& includeMasks,
+                                 const QStringList& excludeMasks) :
     _searchByHash(searchByHash),
     _searchByMeta(searchByMeta),
-    _hashType(hashType),
+    _hashType(std::move(hashType)),
     _scan_depth(depth),
     _min_file_size(minSize)
 {
-    std::cout << "_______________________" << std::endl;
-    std::cout << "Duplicate finder created: " << std::endl;
-    std::cout << std::boolalpha << "Search by hash: " << _searchByHash << std::endl;
-    if (_searchByHash)
+    TrySetHasher(_hashType);
+
+    std::vector<std::string> includePathsVector;
+    for (const QString& path : includeDirectories)
     {
-        std::cout << "Chosen hash type: " << _hashType << std::endl;
+        includePathsVector.push_back(path.toStdString());
     }
-    std::cout << std::boolalpha << "Search by metadata: " << _searchByMeta << std::endl;
-    std::cout << "Scan depth: " << _scan_depth << std::endl;
-    std::cout << "Min file size in bytes: " << _min_file_size << std::endl;
-    std::cout << "Include directories: " << std::endl;
-    for (QString& includeDir : includeDirectories)
+    _include_dirs = TrySetDirs(includePathsVector);
+
+    std::vector<std::string> excludePathsVector;
+    for (const QString& path : excludeDirectories)
     {
-        std::cout << includeDir.toStdString() << std::endl;
+        excludePathsVector.push_back(path.toStdString());
     }
-    std::cout << "Exclude directories: " << std::endl;
-    for (QString& excludeDir : excludeDirectories)
+    _exclude_dirs = TrySetDirs(excludePathsVector);
+
+    for (const QString& mask : includeMasks)
     {
-        std::cout << excludeDir.toStdString() << std::endl;
+        _includeMasks.emplace_back(boost::regex(mask.toStdString()));
     }
-    std::cout << "Include masks: " << std::endl;
-    for (QString& includeMask : includeMasks)
+
+    for (const QString& mask : excludeMasks)
     {
-        std::cout << includeMask.toStdString() << std::endl;
+        _excludeMasks.emplace_back(boost::regex(mask.toStdString()));
     }
-    std::cout << "Exclude masks: " << std::endl;
-    for (QString& excludeMask : excludeMasks)
-    {
-        std::cout << excludeMask.toStdString() << std::endl;
-    }
-    std::cout << "_______________________" << std::endl;
 }
 
 std::unordered_map<std::string, std::unordered_set<std::string>> DuplicateFinder::Find()
@@ -127,16 +122,6 @@ std::shared_ptr<IHash> DuplicateFinder::TrySetHasher(const std::string& hasher)
     throw std::runtime_error("Hasher type doesn't recognized: " + hasher);
 }
 
-std::vector<boost::regex> DuplicateFinder::SetFileMasks(const std::vector<std::string>& filemasks)
-{
-    std::vector<boost::regex> resulted_masks;
-    for (const std::string& mask : filemasks)
-    {
-        resulted_masks.emplace_back(boost::regex(mask));
-    }
-    return resulted_masks;
-}
-
 void DuplicateFinder::ScanPath(const boost::filesystem::path& path, size_t depth)
 {
     if (boost::filesystem::exists(path) and not InExcludeDirs(path))
@@ -166,7 +151,11 @@ void DuplicateFinder::AddFile(const boost::filesystem::path& path)
     {
         return;
     }
-    if (not MasksSatisfied(path))
+    if (not MasksSatisfied(path, _includeMasks))
+    {
+        return;
+    }
+    if (MasksSatisfied(path, _excludeMasks))
     {
         return;
     }
@@ -191,20 +180,20 @@ bool DuplicateFinder::InExcludeDirs(const boost::filesystem::path& path)
     return false;
 }
 
-bool DuplicateFinder::MasksSatisfied(const boost::filesystem::path& path)
+bool DuplicateFinder::MasksSatisfied(const boost::filesystem::path& path, const std::vector<boost::regex>& masksToCheck)
 {
-    if (_filemasks.size() == 0)
+    if (masksToCheck.empty())
     {
         return true;
     }
     std::string filename = path.filename().string();
-    for (const auto& mask : _filemasks)
+    for (const auto& mask : masksToCheck)
     {
         if (boost::regex_match(filename, mask))
         {
             return true;
         }
-    };
+    }
     return false;
 }
 
@@ -212,10 +201,10 @@ bool DuplicateFinder::AlreadyInDuplicates(const boost::filesystem::path& path,
                                           std::unordered_map<std::string, std::unordered_set<std::string>>& duplicates)
 {
     bool already_in_duplicates = false;
-    std::string filepath = path.string();
+    const std::string& filepath = path.string();
     for (const auto& duplicate : duplicates)
     {
-        if (duplicate.second.find(path.string()) != duplicate.second.end())
+        if (duplicate.second.find(filepath) != duplicate.second.end())
         {
             already_in_duplicates = true;
             break;
