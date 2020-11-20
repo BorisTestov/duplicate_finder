@@ -19,7 +19,8 @@ build-essential \
 git \
 software-properties-common \
 wget \
-meld
+meld \
+vim
 WORKDIR /usr/src/gtest
 RUN env "PATH=$PATH" cmake . && env "PATH=$PATH" make && \
 cp libgtest.a libgtest_main.a /usr/lib && \
