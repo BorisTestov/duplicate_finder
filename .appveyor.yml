@@ -64,4 +64,17 @@ before_deploy:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder/build
   - cmake --build . --target package
-# https://www.appveyor.com/docs/appveyor-yml/
+  - git tag $MAJOR.$MINOR.{build} --force
+  - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
+
+deploy:
+  release: ${PROJECT_NAME}-${MAJOR}.${MINOR}.{build}-Linux.deb
+  provider: GitHub
+  auth_token:
+    secure: ${GITHUB_TOKEN}
+  artifact: /.*\.deb/
+  draft: false
+  prerelease: false
+  on:
+    branch: appveyor
+    APPVEYOR_REPO_TAG: true
