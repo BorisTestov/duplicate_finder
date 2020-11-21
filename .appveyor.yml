@@ -17,7 +17,7 @@ before_build:
   - sudo cp libgtest.a libgtest_main.a /usr/lib && cd -
   - sudo add-apt-repository ppa:mhier/libboost-latest -y
   - sudo apt-get install libboost1.70-dev -y
-  - PATH=$HOME/Qt/5.14.2/gcc_64/bin:$PATH
+  - PATH=$HOME/Qt/5.12.10/gcc_64/bin:$PATH
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
