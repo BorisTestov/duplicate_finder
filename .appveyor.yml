@@ -71,7 +71,7 @@ deploy:
   release: ${PROJECT_NAME}-${MAJOR}.${MINOR}.{build}-Linux.deb
   provider: GitHub
   auth_token:
-    secure: ${GITHUB_TOKEN}
+    secure: $GITHUB_TOKEN
   artifact: /.*\.deb/
   draft: false
   prerelease: false
