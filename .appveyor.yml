@@ -35,7 +35,7 @@ build_script:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder/build
   - cmake ..
-  - cmake --build . --target ${PROJECT_NAME}
+  - cmake --build .
 
 test_script:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
