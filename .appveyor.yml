@@ -64,11 +64,11 @@ before_deploy:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder/build
   - cmake --build . --target package
-  - git tag $MAJOR.$MINOR.{build} --force
+  - git tag $APPVEYOR_BUILD_VERSION --force
   - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
 
 deploy:
-  release: ${PROJECT_NAME}-${MAJOR}.${MINOR}.{build}-Linux.deb
+  release: $APPVEYOR_BUILD_VERSION-Linux.deb
   provider: GitHub
   auth_token:
     secure: $GITHUB_TOKEN
