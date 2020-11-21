@@ -7,7 +7,9 @@ environment:
 version: ${MAJOR}.${MINOR}.{build}
 image:
   - Ubuntu1804
-
+branches:
+  only:
+    - appveyor
 # scripts to run before build
 before_build:
   - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
