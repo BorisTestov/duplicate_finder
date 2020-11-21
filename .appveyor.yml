@@ -18,7 +18,7 @@ before_build:
   - sudo add-apt-repository ppa:mhier/libboost-latest -y
   - sudo apt-get install libboost1.70-dev -y
   - PATH=$HOME/Qt/5.12.10/gcc_64/bin:$PATH
-  - echo “deb http://ftp.us.debian.org/debian testing main contrib non-free” | sudo tee /etc/apt/sources.list
+  - echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" | sudo tee /etc/apt/sources.list
   - sudo apt-get update
   - sudo apt-get install build-essential -y
 
