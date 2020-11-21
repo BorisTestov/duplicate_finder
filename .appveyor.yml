@@ -45,7 +45,7 @@ test_script:
 after_build:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder/build
-  - $HOME/doxygen_build/bin/doxygen doxyfile.conf
+  - $HOME/doxygen_build/bin/doxygen ../doxyfile.conf
   - git clone https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git
   - cd $PROJECT_NAME.github.io
   - git rm -rf * || echo "Nothing to delete"
