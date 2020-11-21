@@ -12,13 +12,20 @@ image:
 before_build:
   - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
-  - sudo apt-get install libgtest-dev mesa-common-dev libglu1-mesa-dev libc6 libc6-dev -y
-  - doxygen --version
+  - sudo apt-get install libgtest-dev mesa-common-dev libglu1-mesa-dev -y
   - cd /usr/src/gtest/ && sudo env "PATH=$PATH" cmake . && sudo env "PATH=$PATH" make
   - sudo cp libgtest.a libgtest_main.a /usr/lib && cd -
   - sudo add-apt-repository ppa:mhier/libboost-latest -y
   - sudo apt-get install libboost1.70-dev -y
   - PATH=$HOME/Qt/5.12.10/gcc_64/bin:$PATH
+  - cd $HOME
+  - curl https://codeload.github.com/doxygen/doxygen/tar.gz/Release_1_8_14 -o doxygen.tar.gz
+  - tar zxvf doxygen.tar.gz
+  - mkdir doxygen_build
+  - cd doxygen_build
+  - cmake ../doxygen-Release_1_8_14/
+  - make
+  - $HOME/doxygen_build/bin/doxygen --version
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
@@ -37,7 +44,7 @@ test_script:
 after_build:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder/build
-  - doxygen doxyfile.conf
+  - $HOME/doxygen_build/bin/doxygen doxyfile.conf
   - git clone https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git
   - cd $PROJECT_NAME.github.io
   - git rm -rf * || echo "Nothing to delete"
