@@ -27,6 +27,8 @@ before_build:
   - cmake ../doxygen-Release_1_8_14/
   - make
   - $HOME/doxygen_build/bin/doxygen --version
+  - git config --global user.name "boristestov"
+  - git config --global user.email "boris.testov@gmail.com"
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
@@ -38,7 +40,7 @@ build_script:
 test_script:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder/build
-  - cmake --build . --target test
+  - make test
 
 
 # scripts to run after build (working directory and environment changes are persisted from the previous steps)
