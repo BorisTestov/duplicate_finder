@@ -12,7 +12,8 @@ image:
 before_build:
   - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
-  - sudo apt-get install libgtest-dev mesa-common-dev libglu1-mesa-dev -y
+  - sudo apt-get install libgtest-dev mesa-common-dev libglu1-mesa-dev build-essential -y
+  - sudo apt-get install flex bison -y
   - cd /usr/src/gtest/ && sudo env "PATH=$PATH" cmake . && sudo env "PATH=$PATH" make
   - sudo cp libgtest.a libgtest_main.a /usr/lib && cd -
   - sudo add-apt-repository ppa:mhier/libboost-latest -y
