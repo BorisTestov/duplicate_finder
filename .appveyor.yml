@@ -29,6 +29,8 @@ before_build:
   - $HOME/doxygen_build/bin/doxygen --version
   - git config --global user.name "boristestov"
   - git config --global user.email "boris.testov@gmail.com"
+  - git config --global credential.helper store
+  - ps: Set-Content -Path "$HOME\.git-credentials" -Value "https://$($env:GITHUB_TOKEN):x-oauth-basic@github.com`n" -NoNewline
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
