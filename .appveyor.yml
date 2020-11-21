@@ -1,8 +1,8 @@
 environment:
-  PROJECT_NAME=duplicate_finder
-  PACKAGE_NAME=windows
-  MAJOR=0
-  MINOR=1
+  PROJECT_NAME: duplicate_finder
+  PACKAGE_NAME: main
+  MAJOR: 0
+  MINOR: 1
 
 
 image:
