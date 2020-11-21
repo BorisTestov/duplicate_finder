@@ -4,7 +4,7 @@ environment:
   MAJOR: 0
   MINOR: 1
 
-
+version: ${MAJOR}.${MINOR}.{build}
 image:
   - Ubuntu1804
 
@@ -25,7 +25,7 @@ before_build:
   - mkdir doxygen_build
   - cd doxygen_build
   - cmake ../doxygen-Release_1_8_14/
-  - make
+  - make -j$(nproc)
   - $HOME/doxygen_build/bin/doxygen --version
   - git config --global user.name "boristestov"
   - git config --global user.email "boris.testov@gmail.com"
