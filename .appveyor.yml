@@ -75,6 +75,6 @@ deploy:
   artifact: /.*\.deb/
   draft: false
   prerelease: false
+  skip_tags: true
   on:
     branch: appveyor
-    APPVEYOR_REPO_TAG: false
