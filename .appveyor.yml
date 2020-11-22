@@ -1,6 +1,5 @@
 environment:
   PROJECT_NAME: duplicate_finder
-  PACKAGE_NAME: main
   MAJOR: 0
   MINOR: 1
 
@@ -81,14 +80,16 @@ deploy:
     prerelease: false
     on:
       branch: appveyor
-#  - provider: BinTray
-#    username: johnsmith
-#    api_key:
-#      secure: AABBCC+DDD==
-#    subject: johnsmith
-#    repo: myrepo
-#    package: mypackage
-#    version: version
-#    publish: true
-#    override: true
-#    explode: true
+  - provider: BinTray
+    username: boristestov
+    api_key: $BINTRAY_API_KEY
+    artifact: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+    subject: boristestov
+    repo: duplicate_finder
+    package: linux
+    version: $APPVEYOR_BUILD_VERSION
+    publish: true
+    override: true
+    explode: true
+    on:
+      branch: appveyor
