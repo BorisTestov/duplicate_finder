@@ -73,10 +73,20 @@ before_deploy:
 deploy:
   - provider: GitHub
     release: $APPVEYOR_BUILD_VERSION-Linux.deb
-    auth_token:
-      secure: $GITHUB_TOKEN
+    auth_token: $GITHUB_TOKEN
     artifact: /.*\.deb/
     draft: false
     prerelease: false
     on:
       branch: appveyor
+#  - provider: BinTray
+#    username: johnsmith
+#    api_key:
+#      secure: AABBCC+DDD==
+#    subject: johnsmith
+#    repo: myrepo
+#    package: mypackage
+#    version: version
+#    publish: true
+#    override: true
+#    explode: true
