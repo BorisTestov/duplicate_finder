@@ -5,12 +5,16 @@ environment:
   MINOR: 1
 
 version: ${MAJOR}.${MINOR}.{build}
+
 image:
   - Ubuntu1804
+  -
 branches:
   only:
     - appveyor
-# scripts to run before build
+
+skip_tags: true
+
 before_build:
   - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
@@ -34,7 +38,6 @@ before_build:
   - git config --global credential.helper store
   - ps: Set-Content -Path "$HOME\.git-credentials" -Value "https://$($env:GITHUB_TOKEN):x-oauth-basic@github.com`n" -NoNewline
 
-# to run your custom scripts instead of automatic MSBuild
 build_script:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder/build
@@ -46,8 +49,6 @@ test_script:
   - cd /home/appveyor/projects/duplicate-finder/build
   - make test
 
-
-# scripts to run after build (working directory and environment changes are persisted from the previous steps)
 after_build:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder
@@ -70,13 +71,12 @@ before_deploy:
   - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
 
 deploy:
-  release: $APPVEYOR_BUILD_VERSION-Linux.deb
-  provider: GitHub
-  auth_token:
-    secure: $GITHUB_TOKEN
-  artifact: /.*\.deb/
-  draft: false
-  prerelease: false
-  skip_tags: true
-  on:
-    branch: appveyor
+  - provider: GitHub
+    release: $APPVEYOR_BUILD_VERSION-Linux.deb
+    auth_token:
+      secure: $GITHUB_TOKEN
+    artifact: /.*\.deb/
+    draft: false
+    prerelease: false
+    on:
+      branch: appveyor
