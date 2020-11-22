@@ -63,6 +63,10 @@ after_build:
   - cd ..
   - sudo rm -rf $PROJECT_NAME.github.io
 
+artifacts:
+  - path: /home/appveyor/projects/duplicate-finder/build/$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+    name: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+
 before_deploy:
   - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder/build
@@ -72,6 +76,7 @@ before_deploy:
 
 deploy:
   - provider: GitHub
+    skip_cleanup: true
     release: $APPVEYOR_BUILD_VERSION-Linux.deb
     auth_token: $GITHUB_TOKEN
     artifact: /home/appveyor/projects/duplicate-finder/build/$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
