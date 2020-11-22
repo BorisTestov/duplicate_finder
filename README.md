@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/BorisTestov/duplicate_finder.svg?branch=master)](https://travis-ci.com/BorisTestov/duplicate_finder)
+[![Build status](https://ci.appveyor.com/api/projects/status/iwu3cy90wm9p37bd?svg=true)](https://ci.appveyor.com/project/BorisTestov/duplicate-finder)
 
 Otus cpp course project
 
