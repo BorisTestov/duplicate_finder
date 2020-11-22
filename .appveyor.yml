@@ -103,3 +103,9 @@ for:
         explode: true
         on:
           branch: appveyor
+
+  - matrix:
+      only:
+        - job_name: Windows build
+    build_script:
+      - ps: Write-Host "This is windows"
