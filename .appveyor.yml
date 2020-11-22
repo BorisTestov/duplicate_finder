@@ -62,17 +62,14 @@ after_build:
   - git commit -m "Documentation from travis-ci build $TRAVIS_BUILD_NUMBER" && git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git || echo "Nothing to commit"
   - cd ..
   - sudo rm -rf $PROJECT_NAME.github.io
-
-artifacts:
-  - path: build\*.deb
-    name: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
-
-before_deploy:
-  - mkdir -p /home/appveyor/projects/duplicate-finder/build
   - cd /home/appveyor/projects/duplicate-finder/build
   - cmake --build . --target package
   - git tag $APPVEYOR_BUILD_VERSION --force
   - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
+
+artifacts:
+  - path: build\$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb.deb
+    name: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
 
 deploy:
   - provider: GitHub
