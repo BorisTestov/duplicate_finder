@@ -68,7 +68,7 @@ after_build:
   - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
 
 artifacts:
-  - path: build\$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb.deb
+  - path: build/$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
     name: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
 
 deploy:
