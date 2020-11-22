@@ -39,7 +39,7 @@ Otus cpp course project
 ## CI/CD
 
 Github: https://github.com/BorisTestov/duplicate_finder <br>
-Bintray: https://bintray.com/boristestov/duplicate_finder/main <br>
-Travis: https://travis-ci.com/github/BorisTestov/duplicate_finder <br>
+Bintray: https://bintray.com/boristestov/duplicate_finder <br>
+Appveyor: https://ci.appveyor.com/project/BorisTestov/duplicate-finder <br>
 Github-pages: https://github.com/BorisTestov/duplicate_finder.github.io (https://boristestov.github.io/duplicate_finder.github.io/index.html) <br>
 
