@@ -74,7 +74,7 @@ deploy:
   - provider: GitHub
     release: $APPVEYOR_BUILD_VERSION-Linux.deb
     auth_token: $GITHUB_TOKEN
-    artifact: /.*\.deb/
+    artifact: /home/appveyor/projects/duplicate-finder/build/$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
     draft: false
     prerelease: false
     on:
