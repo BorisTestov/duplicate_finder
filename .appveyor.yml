@@ -64,7 +64,7 @@ after_build:
   - sudo rm -rf $PROJECT_NAME.github.io
 
 artifacts:
-  - path: 'duplicate-finder/build/*.deb'
+  - path: 'build/*.deb'
     name: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
 
 before_deploy:
