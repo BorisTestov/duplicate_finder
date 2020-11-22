@@ -1,0 +1,111 @@
+environment:
+  PROJECT_NAME: duplicate_finder
+  MAJOR: 0
+  MINOR: 1
+  matrix:
+    - job_name: Windows build
+      appveyor_build_worker_image: Visual Studio 2019
+    - job_name: Linux build
+      appveyor_build_worker_image: Ubuntu1804
+
+version: ${MAJOR}.${MINOR}.{build}
+
+branches:
+  only:
+    - appveyor
+
+skip_tags: true
+
+matrix:
+  fast_finish: true
+
+for:
+  - matrix:
+      only:
+        - job_name: Linux build
+
+    before_build:
+      - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
+      - sudo apt-get update -qq
+      - sudo apt-get install libgtest-dev mesa-common-dev libglu1-mesa-dev build-essential -y
+      - sudo apt-get install flex bison -y
+      - cd /usr/src/gtest/ && sudo env "PATH=$PATH" cmake . && sudo env "PATH=$PATH" make
+      - sudo cp libgtest.a libgtest_main.a /usr/lib && cd -
+      - sudo add-apt-repository ppa:mhier/libboost-latest -y
+      - sudo apt-get install libboost1.70-dev -y
+      - PATH=$HOME/Qt/5.12.10/gcc_64/bin:$PATH
+      - cd $HOME
+      - curl https://codeload.github.com/doxygen/doxygen/tar.gz/Release_1_8_14 -o doxygen.tar.gz
+      - tar zxvf doxygen.tar.gz
+      - mkdir doxygen_build
+      - cd doxygen_build
+      - cmake ../doxygen-Release_1_8_14/
+      - make -j$(nproc)
+      - $HOME/doxygen_build/bin/doxygen --version
+      - git config --global user.name "boristestov"
+      - git config --global user.email "boris.testov@gmail.com"
+      - git config --global credential.helper store
+      - ps: Set-Content -Path "$HOME\.git-credentials" -Value "https://$($env:GITHUB_TOKEN):x-oauth-basic@github.com`n" -NoNewline
+
+    build_script:
+      - mkdir -p /home/appveyor/projects/duplicate-finder/build
+      - cd /home/appveyor/projects/duplicate-finder/build
+      - cmake ..
+      - cmake --build .
+
+    test_script:
+      - mkdir -p /home/appveyor/projects/duplicate-finder/build
+      - cd /home/appveyor/projects/duplicate-finder/build
+      - make test
+
+    after_build:
+      - mkdir -p /home/appveyor/projects/duplicate-finder/build
+      - cd /home/appveyor/projects/duplicate-finder
+      - $HOME/doxygen_build/bin/doxygen doxyfile.conf
+      - cd build
+      - git clone https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git
+      - cd $PROJECT_NAME.github.io
+      - git rm -rf * || echo "Nothing to delete"
+      - mv -v ../../doc/html/* .
+      - git add .
+      - git commit -m "Documentation from travis-ci build $TRAVIS_BUILD_NUMBER" && git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git || echo "Nothing to commit"
+      - cd ..
+      - sudo rm -rf $PROJECT_NAME.github.io
+      - cd /home/appveyor/projects/duplicate-finder/build
+      - cmake --build . --target package
+      - git tag $APPVEYOR_BUILD_VERSION --force
+      - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
+
+    artifacts:
+      - path: build/$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+        name: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+
+    deploy:
+      - provider: GitHub
+        skip_cleanup: true
+        release: $APPVEYOR_BUILD_VERSION-Linux.deb
+        auth_token: $GITHUB_TOKEN
+        artifact: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+        draft: false
+        prerelease: false
+        on:
+          branch: appveyor
+      - provider: BinTray
+        username: boristestov
+        api_key: $BINTRAY_API_KEY
+        artifact: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+        subject: boristestov
+        repo: duplicate_finder
+        package: linux
+        version: $APPVEYOR_BUILD_VERSION
+        publish: true
+        override: true
+        explode: true
+        on:
+          branch: appveyor
+
+  - matrix:
+      only:
+        - job_name: Windows build
+    build_script:
+      - ps: Write-Host "This is windows"
