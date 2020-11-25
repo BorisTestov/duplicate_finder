@@ -1,5 +1,6 @@
 #include "duplicate_finder.h"
 
+#include <QtConcurrent/QtConcurrent>
 #include <iostream>
 #include <utility>
 
@@ -16,7 +17,9 @@ DuplicateFinder::DuplicateFinder(bool searchByHash,
     _searchByMeta(searchByMeta),
     _hashType(std::move(hashType)),
     _scan_depth(depth),
-    _min_file_size(minSize)
+    _min_file_size(minSize),
+    _totalFiles(0),
+    _completedFiles(0)
 {
     TrySetHasher(_hashType);
 
@@ -45,8 +48,11 @@ DuplicateFinder::DuplicateFinder(bool searchByHash,
     }
 }
 
-std::unordered_map<std::string, std::unordered_set<std::string>> DuplicateFinder::Find()
+void DuplicateFinder::Find()
 {
+    /**
+     * scan directories and add files to multimap
+     */
     for (const auto& dir : _include_dirs)
     {
         for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(dir))
@@ -54,36 +60,80 @@ std::unordered_map<std::string, std::unordered_set<std::string>> DuplicateFinder
             ScanPath(entry.path(), _scan_depth);
         }
     }
-    std::unordered_map<std::string, std::unordered_set<std::string>> duplicates;
-    if (_files.size() < 2)
+    _totalFiles = _filesToScan.size();
+
+    /**
+     * get keys of multimap - all different sizes of files
+     */
+    std::vector<uintmax_t> keys;
+    for (const auto& pair : _filesToScan)
     {
-        return duplicates;
-    }
-    for (auto first_file = std::begin(_files); first_file != end(_files); first_file++)
-    {
-        if (AlreadyInDuplicates(first_file->GetFilePath(), duplicates))
+        if (std::find(keys.begin(), keys.end(), pair.first) == keys.end())
         {
-            continue;
-        }
-        for (auto second_file = std::begin(_files); second_file != end(_files); second_file++)
-        {
-            if (AlreadyInDuplicates(second_file->GetFilePath(), duplicates))
-            {
-                continue;
-            }
-            if (first_file->GetFilePath() == second_file->GetFilePath())
-            {
-                continue;
-            }
-            if (first_file->Equal(*second_file))
-            {
-                auto first_file_path = first_file->GetFilePath().string();
-                auto second_file_path = second_file->GetFilePath().string();
-                duplicates[first_file_path].insert(second_file_path);
-            }
+            keys.emplace_back(pair.first);
         }
     }
-    return duplicates;
+
+    /**
+     * create separate vector for each filesize
+     * then run scan process in parallel
+     */
+    std::vector<QFuture<void>> processes;
+    for (const auto& key : keys)
+    {
+        std::vector<HashedFile> files = _filesToScan[key];
+        //        processes.emplace_back(QtConcurrent::run(this, &DuplicateFinder::Scan, files));
+        Scan(files);
+        std::cout << "Scan runned for files with size " << key << std::endl;
+    }
+
+    /**
+     * wait for all processes
+     */
+    //    for (auto& process : processes)
+    //    {
+    //        process.waitForFinished();
+    //    }
+    for (const auto& duplicates : _totalDuplicates)
+    {
+        std::cout << duplicates.first << std::endl;
+        for (const auto& path : duplicates.second)
+        {
+            std::cout << path << std::endl;
+        }
+        std::cout << std::endl;
+    }
+    //std::cout << "HERE" << std::endl;
+    //    std::unordered_map<std::string, std::unordered_set<std::string>> duplicates;
+    //    if (_files.size() < 2)
+    //    {
+    //        return duplicates;
+    //    }
+    //    for (auto first_file = std::begin(_files); first_file != end(_files); first_file++)
+    //    {
+    //        if (AlreadyInDuplicates(first_file->GetFilePath(), duplicates))
+    //        {
+    //            continue;
+    //        }
+    //        for (auto second_file = std::begin(_files); second_file != end(_files); second_file++)
+    //        {
+    //            if (AlreadyInDuplicates(second_file->GetFilePath(), duplicates))
+    //            {
+    //                continue;
+    //            }
+    //            if (first_file->GetFilePath() == second_file->GetFilePath())
+    //            {
+    //                continue;
+    //            }
+    //            if (first_file->Equal(*second_file))
+    //            {
+    //                auto first_file_path = first_file->GetFilePath().string();
+    //                auto second_file_path = second_file->GetFilePath().string();
+    //                duplicates[first_file_path].insert(second_file_path);
+    //            }
+    //        }
+    //    }
+    //    return duplicates;
 }
 
 std::vector<boost::filesystem::path> DuplicateFinder::TrySetDirs(const std::vector<std::string>& dirs)
@@ -151,21 +201,21 @@ void DuplicateFinder::AddFile(const boost::filesystem::path& path)
     {
         return;
     }
-    if (not MasksSatisfied(path, _includeMasks))
+    if (not MasksSatisfied(path, _includeMasks) and not _includeMasks.empty())
     {
         return;
     }
-    if (MasksSatisfied(path, _excludeMasks))
+    if (MasksSatisfied(path, _excludeMasks) and not _excludeMasks.empty())
     {
         return;
     }
     std::string abs_path = weakly_canonical(absolute(path)).string();
-    if (_scanned_file_paths.find(abs_path) != _scanned_file_paths.end())
+    if (_scanned_file_paths.find(abs_path) == _scanned_file_paths.end())
     {
+        _scanned_file_paths.insert(abs_path);
+        _filesToScan[file_size(path)].emplace_back(HashedFile(abs_path, _block_size, _hasher));
         return;
     }
-    _scanned_file_paths.insert(abs_path);
-    _files.emplace_back(HashedFile(path.string(), _block_size, _hasher));
 }
 
 bool DuplicateFinder::InExcludeDirs(const boost::filesystem::path& path)
@@ -182,10 +232,6 @@ bool DuplicateFinder::InExcludeDirs(const boost::filesystem::path& path)
 
 bool DuplicateFinder::MasksSatisfied(const boost::filesystem::path& path, const std::vector<boost::regex>& masksToCheck)
 {
-    if (masksToCheck.empty())
-    {
-        return true;
-    }
     std::string filename = path.filename().string();
     for (const auto& mask : masksToCheck)
     {
@@ -211,4 +257,37 @@ bool DuplicateFinder::AlreadyInDuplicates(const boost::filesystem::path& path,
         }
     }
     return already_in_duplicates;
+}
+
+void DuplicateFinder::Scan(std::vector<HashedFile>& files)
+{
+    if (files.size() < 2)
+    {
+        return;
+    }
+    std::unordered_map<std::string, std::unordered_set<std::string>> localDuplicates;
+    for (HashedFile& first_file : files)
+    {
+        if (AlreadyInDuplicates(first_file.GetFilePath(), localDuplicates))
+        {
+            continue;
+        }
+        for (HashedFile& second_file : files)
+        {
+            if (AlreadyInDuplicates(second_file.GetFilePath(), localDuplicates))
+            {
+                continue;
+            }
+            if (first_file.GetFilePath() == second_file.GetFilePath())
+            {
+                continue;
+            }
+            bool files_equal = first_file.Equal(second_file);
+            if (files_equal)
+            {
+                localDuplicates[first_file.GetFilePath().string()].insert(second_file.GetFilePath().string());
+                _totalDuplicates[first_file.GetFilePath().string()].insert(second_file.GetFilePath().string());
+            }
+        }
+    }
 }

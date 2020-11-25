@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QCryptographicHash>
 #include <boost/crc.hpp>
 #include <boost/uuid/detail/md5.hpp>
 #include <boost/uuid/detail/sha1.hpp>

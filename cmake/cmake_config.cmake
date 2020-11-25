@@ -37,4 +37,4 @@ if (MSVC)
     set(COMPILE_OPTIONS /W4)
 endif ()
 
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")

@@ -26,9 +26,8 @@ public:
 
     /**
      * @brief Find duplicate files
-     * @return - map of duplicates: path to file and vector of duplicates
      */
-    std::unordered_map<std::string, std::unordered_set<std::string>> Find();
+    void Find();
 
 private:
     bool _searchByHash;
@@ -44,10 +43,12 @@ private:
     const unsigned long long int _min_file_size;
     std::shared_ptr<IHash> _hasher;
 
-    std::vector<HashedFile> _files;
     std::unordered_set<std::string> _scanned_file_paths;
 
-    std::multimap<uintmax_t, HashedFile> sizeMap;
+    std::unordered_map<uintmax_t, std::vector<HashedFile>> _filesToScan;
+    uintmax_t _totalFiles;
+    uintmax_t _completedFiles;
+    std::unordered_map<std::string, std::unordered_set<std::string>> _totalDuplicates;
 
     /**
     * @brief Set directories from vector of strings
@@ -56,6 +57,12 @@ private:
     * @return vector of boost paths
     */
     std::vector<boost::filesystem::path> TrySetDirs(const std::vector<std::string>& dirs);
+
+    /**
+     * @brief Scan vector of (pointer to) files of same size to find duplicates
+     * @param files - files for scanning
+     */
+    void Scan(std::vector<HashedFile>& files);
 
     /**
      * @brief Set hasher type for scanning

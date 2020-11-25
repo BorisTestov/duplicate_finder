@@ -4,10 +4,14 @@
 
 std::vector<unsigned int> CRC32Hasher::Hash(const char* buffer)
 {
-    boost::crc_32_type result;
-    result.process_bytes(buffer, strlen(buffer));
-    auto checksum = result.checksum();
-    return { checksum };
+    auto data = QCryptographicHash::hash(QByteArray::fromRawData(buffer, strlen(buffer)), QCryptographicHash::Md4);
+    std::vector<unsigned int> f(data.begin(), data.end());
+    std::cout << "VEC SIZE: " << f.size() << std::endl;
+    return f;
+    //    boost::crc_32_type result;
+    //    result.process_bytes(buffer, strlen(buffer));
+    //    auto checksum = result.checksum();
+    //    return { checksum };
 }
 
 std::vector<unsigned int> MD5Hasher::Hash(const char* buffer)

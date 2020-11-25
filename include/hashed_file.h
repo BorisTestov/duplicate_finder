@@ -2,10 +2,11 @@
 
 #include "hash.h"
 
+#include <QFile>
 #include <boost/filesystem.hpp>
+#include <hash.h>
 #include <iostream>
 #include <vector>
-
 /**
  * @brief Структура с хешем блока данных
  */
@@ -28,6 +29,12 @@ public:
     HashedFile(boost::filesystem::path path, uintmax_t hash_blocksize, std::shared_ptr<IHash> hasher);
 
     /**
+     * @brief Конструктор копирования
+     * @param file - файл для копирования
+     */
+    HashedFile(const HashedFile& file);
+
+    /**
      * @brief Произвести сравнение двух файлов
      * @param other - Файл, с которым производится сравнение
      * @return true, если файлы совпадают, иначе false
@@ -47,7 +54,7 @@ private:
     const uintmax_t blocksize_;
     std::shared_ptr<IHash> hasher_;
     std::vector<HashNode> hash_data_;
-    std::unique_ptr<std::ifstream> file_handle_;
+    //    std::unique_ptr<std::ifstream> file_handle_;
 
     /**
      * @brief Открыть файл и перейти в место последнего нехешированного блока
@@ -77,4 +84,12 @@ private:
      * @return хеш блока
      */
     HashNode GetHashNode(size_t block_index);
+};
+
+struct SetHash
+{
+    std::size_t operator()(const HashedFile& _node) const
+    {
+        return std::hash<std::string>()(_node.GetFilePath().string());
+    }
 };

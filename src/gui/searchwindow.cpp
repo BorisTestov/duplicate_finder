@@ -246,7 +246,7 @@ void SearchWindow::createAdditionalSettingsButton()
 
 void SearchWindow::createSearchDepthLabel()
 {
-    _searchDepthLabel = new QLabel("Search depth (0 - unlimited)", this);
+    _searchDepthLabel = new QLabel("Search depth", this);
     _searchDepthLabel->setGeometry(230, 610, 180, 20);
     _searchDepthLabel->hide();
 }
