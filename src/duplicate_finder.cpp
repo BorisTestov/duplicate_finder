@@ -21,7 +21,10 @@ DuplicateFinder::DuplicateFinder(bool searchByHash,
     _totalFiles(0),
     _completedFiles(0)
 {
-    TrySetHasher(_hashType);
+    if (_searchByHash)
+    {
+        TrySetHasher(_hashType);
+    }
 
     std::vector<std::string> includePathsVector;
     for (const QString& path : includeDirectories)
@@ -282,7 +285,17 @@ void DuplicateFinder::Scan(std::vector<HashedFile>& files)
             {
                 continue;
             }
-            bool files_equal = first_file.Equal(second_file);
+            bool files_equal = true;
+            if (_searchByHash)
+            {
+                files_equal = files_equal and first_file.Equal(second_file);
+            }
+            if (_searchByMeta)
+            {
+                auto first_file_name = first_file.GetFilePath().filename().string();
+                auto second_file_name = second_file.GetFilePath().filename().string();
+                files_equal = files_equal and (first_file_name == second_file_name);
+            }
             if (files_equal)
             {
                 localDuplicates[first_file.GetFilePath().string()].insert(second_file.GetFilePath().string());
