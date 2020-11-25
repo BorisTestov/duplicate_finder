@@ -82,18 +82,18 @@ void DuplicateFinder::Find()
     for (const auto& key : keys)
     {
         std::vector<HashedFile> files = _filesToScan[key];
-        //        processes.emplace_back(QtConcurrent::run(this, &DuplicateFinder::Scan, files));
-        Scan(files);
+        processes.emplace_back(QtConcurrent::run(this, &DuplicateFinder::Scan, files));
+        //        Scan(files);
         std::cout << "Scan runned for files with size " << key << std::endl;
     }
 
     /**
      * wait for all processes
      */
-    //    for (auto& process : processes)
-    //    {
-    //        process.waitForFinished();
-    //    }
+    for (auto& process : processes)
+    {
+        process.waitForFinished();
+    }
     for (const auto& duplicates : _totalDuplicates)
     {
         std::cout << duplicates.first << std::endl;
