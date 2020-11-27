@@ -1,27 +1,26 @@
 #include "hashed_file.h"
 
 #include <QFile>
-#include <QFileInfo>
+#include <QPointer>
 
 HashedFile::HashedFile(boost::filesystem::path path, QCryptographicHash::Algorithm hash_method) :
     filepath_(path),
     filesize_(boost::filesystem::file_size(filepath_)),
     max_blocks_amount_((filesize_ + blocksize_ - 1) / blocksize_),
-    birthTime_(QFileInfo(QString::fromStdString(filepath_.string())).created()),
     hash_method_(hash_method)
 {
 }
 
-bool HashedFile::Equal(HashedFile& other)
+bool HashedFile::Equal(const QPointer<HashedFile>& other)
 {
-    if (filesize_ != other.filesize_)
+    if (filesize_ != other->filesize_)
     {
         return false;
     }
     bool isEqual = true;
     for (size_t i = 0; i < max_blocks_amount_; i++)
     {
-        if (GetHashNode(i) != other.GetHashNode(i))
+        if (GetHashNode(i) != other->GetHashNode(i))
         {
             isEqual = false;
             break;

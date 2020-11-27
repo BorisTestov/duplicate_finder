@@ -2,14 +2,15 @@
 
 #include <QByteArray>
 #include <QCryptographicHash>
-#include <QDateTime>
 #include <QFile>
+#include <QObject>
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <vector>
 
-class HashedFile
+class HashedFile : public QObject
 {
+    Q_OBJECT
 public:
     /**
      * @brief Конструктор класса HashedFile
@@ -20,10 +21,10 @@ public:
 
     /**
      * @brief Произвести сравнение двух файлов
-     * @param other - Файл, с которым производится сравнение
+     * @param other - Указатель на файл, с которым производится сравнение
      * @return true, если файлы совпадают, иначе false
      */
-    bool Equal(HashedFile& other);
+    bool Equal(const QPointer<HashedFile>& other);
 
     /**
      * @brief Возвращает путь к файлу
@@ -36,7 +37,6 @@ private:
     const boost::filesystem::path filepath_;
     const uintmax_t filesize_;
     const size_t max_blocks_amount_;
-    const QDateTime birthTime_;
     const QCryptographicHash::Algorithm hash_method_;
     std::vector<QByteArray> hash_data_;
 

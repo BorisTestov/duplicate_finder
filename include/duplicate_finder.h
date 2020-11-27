@@ -2,6 +2,7 @@
 
 #include "hashed_file.h"
 
+#include <QPointer>
 #include <QStringList>
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
@@ -25,8 +26,9 @@ public:
 
     /**
      * @brief Find duplicate files
+     * @return List of duplicates
      */
-    void Find();
+    std::unordered_map<std::string, std::unordered_set<std::string>> Find();
 
 private:
     bool _searchByHash;
@@ -42,7 +44,7 @@ private:
 
     std::unordered_set<std::string> _scanned_file_paths;
 
-    std::unordered_map<uintmax_t, std::vector<HashedFile>> _filesToScan;
+    std::unordered_map<uintmax_t, std::vector<QPointer<HashedFile>>> _filesToScan;
     std::unordered_map<std::string, std::unordered_set<std::string>> _totalDuplicates;
 
     /**
@@ -57,7 +59,7 @@ private:
      * @brief Scan vector of (pointer to) files of same size to find duplicates
      * @param files - files for scanning
      */
-    void FindDuplicates(std::vector<HashedFile>& files);
+    void FindDuplicates(std::vector<QPointer<HashedFile>>& files);
 
     /**
      * @brief Scan directory for adding files for future duplicate finding or running scan of subdirectories

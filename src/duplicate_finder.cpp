@@ -43,7 +43,7 @@ DuplicateFinder::DuplicateFinder(bool searchByHash,
     }
 }
 
-void DuplicateFinder::Find()
+std::unordered_map<std::string, std::unordered_set<std::string>> DuplicateFinder::Find()
 {
     /**
      * scan directories and add files to multimap
@@ -75,9 +75,8 @@ void DuplicateFinder::Find()
     std::vector<QFuture<void>> processes;
     for (const auto& key : keys)
     {
-        std::vector<HashedFile> files = _filesToScan[key];
+        std::vector<QPointer<HashedFile>> files = _filesToScan[key];
         processes.emplace_back(QtConcurrent::run(this, &DuplicateFinder::FindDuplicates, files));
-        std::cout << "Scan runned for files with size " << key << std::endl;
     }
 
     /**
@@ -96,6 +95,7 @@ void DuplicateFinder::Find()
         }
         std::cout << std::endl;
     }
+    return _totalDuplicates;
 }
 
 std::vector<boost::filesystem::path> DuplicateFinder::TrySetDirs(const std::vector<std::string>& dirs)
@@ -158,7 +158,7 @@ void DuplicateFinder::AddFile(const boost::filesystem::path& path)
     if (_scanned_file_paths.find(abs_path) == _scanned_file_paths.end())
     {
         _scanned_file_paths.insert(abs_path);
-        _filesToScan[file_size(path)].emplace_back(HashedFile(abs_path, _hash_method));
+        _filesToScan[file_size(path)].emplace_back(QPointer<HashedFile>(new HashedFile(abs_path, _hash_method)));
         return;
     }
 }
@@ -204,44 +204,44 @@ bool DuplicateFinder::AlreadyInDuplicates(const boost::filesystem::path& path,
     return already_in_duplicates;
 }
 
-void DuplicateFinder::FindDuplicates(std::vector<HashedFile>& files)
+void DuplicateFinder::FindDuplicates(std::vector<QPointer<HashedFile>>& files)
 {
     if (files.size() < 2)
     {
         return;
     }
     std::unordered_map<std::string, std::unordered_set<std::string>> localDuplicates;
-    for (HashedFile& first_file : files)
+    for (const QPointer<HashedFile>& first_file : files)
     {
-        if (AlreadyInDuplicates(first_file.GetFilePath(), localDuplicates))
+        if (AlreadyInDuplicates(first_file->GetFilePath(), localDuplicates))
         {
             continue;
         }
-        for (HashedFile& second_file : files)
+        for (const QPointer<HashedFile>& second_file : files)
         {
-            if (AlreadyInDuplicates(second_file.GetFilePath(), localDuplicates))
+            if (AlreadyInDuplicates(second_file->GetFilePath(), localDuplicates))
             {
                 continue;
             }
-            if (first_file.GetFilePath() == second_file.GetFilePath())
+            if (first_file->GetFilePath() == second_file->GetFilePath())
             {
                 continue;
             }
             bool files_equal = true;
             if (_searchByHash)
             {
-                files_equal = files_equal and first_file.Equal(second_file);
+                files_equal = files_equal and first_file->Equal(second_file);
             }
             if (_searchByMeta)
             {
-                auto first_file_name = first_file.GetFilePath().filename().string();
-                auto second_file_name = second_file.GetFilePath().filename().string();
+                auto first_file_name = first_file->GetFilePath().filename().string();
+                auto second_file_name = second_file->GetFilePath().filename().string();
                 files_equal = files_equal and (first_file_name == second_file_name);
             }
             if (files_equal)
             {
-                localDuplicates[first_file.GetFilePath().string()].insert(second_file.GetFilePath().string());
-                _totalDuplicates[first_file.GetFilePath().string()].insert(second_file.GetFilePath().string());
+                localDuplicates[first_file->GetFilePath().string()].insert(second_file->GetFilePath().string());
+                _totalDuplicates[first_file->GetFilePath().string()].insert(second_file->GetFilePath().string());
             }
         }
     }

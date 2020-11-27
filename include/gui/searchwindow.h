@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gui/resultwindow.h"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFileDialog>
@@ -197,6 +199,8 @@ private:
     QPointer<QComboBox> _minFileSizeDimensionComboBox;
 
     QPointer<QPushButton> _searchButton;
+
+    QPointer<ResultWindow> _resultWindow;
 
     QStringList _includeDirectories;
     QStringList _excludeDirectories;

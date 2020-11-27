@@ -4,6 +4,7 @@
 
 #include <QCryptographicHash>
 #include <QDesktopServices>
+#include <QMessageBox>
 #include <QShortcut>
 #include <QTreeView>
 
@@ -462,6 +463,10 @@ void SearchWindow::runSearch()
 {
     if (_includeDirectories.empty())
     {
+        QMessageBox msgBox;
+        msgBox.setText(
+            "Please choose at least one directory for search");
+        msgBox.exec();
         return;
     }
     if (_searchByMeta or _searchByHash)
@@ -528,6 +533,16 @@ void SearchWindow::runSearch()
                                _excludeDirectories,
                                _includeMasks,
                                _excludeMasks);
-        finder.Find();
+        std::unordered_map<std::string, std::unordered_set<std::string>> duplicates = finder.Find();
+        _resultWindow = QPointer<ResultWindow>(new ResultWindow(duplicates));
+        _resultWindow->show();
+    }
+    else
+    {
+        QMessageBox msgBox;
+        msgBox.setText(
+            "Please choose at least one:\n"
+            "Use hash or Search by name and size");
+        msgBox.exec();
     }
 }
