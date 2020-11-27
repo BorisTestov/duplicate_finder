@@ -2,6 +2,7 @@
 
 #include "duplicate_finder.h"
 
+#include <QCryptographicHash>
 #include <QDesktopServices>
 #include <QShortcut>
 #include <QTreeView>
@@ -504,10 +505,23 @@ void SearchWindow::runSearch()
             }
             size *= BYTES_IN_KB * KB_IN_MB * MB_IN_GB;
         }
+        QCryptographicHash::Algorithm algorithm = QCryptographicHash::Md5;
+        if (_hashType == "md5")
+        {
+            algorithm = QCryptographicHash::Md5;
+        }
+        else if (_hashType == "sha1")
+        {
+            algorithm = QCryptographicHash::Sha1;
+        }
+        else if (_hashType == "sha512")
+        {
+            algorithm = QCryptographicHash::Sha512;
+        }
 
         DuplicateFinder finder(_searchByHash,
                                _searchByMeta,
-                               _hashType.toStdString(),
+                               algorithm,
                                depth,
                                size,
                                _includeDirectories,

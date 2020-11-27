@@ -1,6 +1,5 @@
 #pragma once
 
-#include "hash.h"
 #include "hashed_file.h"
 
 #include <QStringList>
@@ -16,7 +15,7 @@ public:
     DuplicateFinder() = delete;
     DuplicateFinder(bool searchByHash,
                     bool searchByMeta,
-                    std::string hashType,
+                    QCryptographicHash::Algorithm hash_method,
                     size_t depth,
                     unsigned int minSize,
                     const QStringList& includeDirectories,
@@ -32,22 +31,18 @@ public:
 private:
     bool _searchByHash;
     bool _searchByMeta;
-    std::string _hashType;
 
     std::vector<boost::filesystem::path> _include_dirs;
     std::vector<boost::filesystem::path> _exclude_dirs;
     std::vector<boost::regex> _includeMasks;
     std::vector<boost::regex> _excludeMasks;
-    const size_t _block_size = 512;
     const size_t _scan_depth;
     const unsigned long long int _min_file_size;
-    std::shared_ptr<IHash> _hasher;
+    const QCryptographicHash::Algorithm _hash_method;
 
     std::unordered_set<std::string> _scanned_file_paths;
 
     std::unordered_map<uintmax_t, std::vector<HashedFile>> _filesToScan;
-    uintmax_t _totalFiles;
-    uintmax_t _completedFiles;
     std::unordered_map<std::string, std::unordered_set<std::string>> _totalDuplicates;
 
     /**
@@ -62,22 +57,14 @@ private:
      * @brief Scan vector of (pointer to) files of same size to find duplicates
      * @param files - files for scanning
      */
-    void Scan(std::vector<HashedFile>& files);
+    void FindDuplicates(std::vector<HashedFile>& files);
 
     /**
-     * @brief Set hasher type for scanning
-     * @param hasher - string of hasher name. Possible names: crc32/md5/sha1
-     * @throw std::runtime_error if hasher name not in possible names list
-     * @return shared_ptr to hasher
-     */
-    std::shared_ptr<IHash> TrySetHasher(const std::string& hasher);
-
-    /**
-     * @brief Scan directory
+     * @brief Scan directory for adding files for future duplicate finding or running scan of subdirectories
      * @param path - path to scanning
-     * @param depth - depth of scanning, 0 - unlimited
+     * @param depth - depth of scanning
      */
-    void ScanPath(const boost::filesystem::path& path, size_t depth);
+    void ScanDirectory(const boost::filesystem::path& path, size_t depth);
 
     /**
      * @brief Add file to analyzing

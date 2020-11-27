@@ -1,21 +1,12 @@
 #pragma once
 
-#include "hash.h"
-
+#include <QByteArray>
+#include <QCryptographicHash>
+#include <QDateTime>
 #include <QFile>
 #include <boost/filesystem.hpp>
-#include <hash.h>
 #include <iostream>
 #include <vector>
-/**
- * @brief Структура с хешем блока данных
- */
-struct HashNode
-{
-    std::vector<unsigned int> data;
-    bool operator==(const HashNode& other) const;
-    bool operator!=(const HashNode& other) const;
-};
 
 class HashedFile
 {
@@ -24,15 +15,8 @@ public:
      * @brief Конструктор класса HashedFile
      * @param path - путь к файлу
      * @param hash_blocksize - размер блока для хеширования, в байтах
-     * @param hasher - тип используемого хешера. @see hash.h
      */
-    HashedFile(boost::filesystem::path path, uintmax_t hash_blocksize, std::shared_ptr<IHash> hasher);
-
-    /**
-     * @brief Конструктор копирования
-     * @param file - файл для копирования
-     */
-    HashedFile(const HashedFile& file);
+    HashedFile(boost::filesystem::path path, QCryptographicHash::Algorithm hash_method);
 
     /**
      * @brief Произвести сравнение двух файлов
@@ -48,29 +32,13 @@ public:
     boost::filesystem::path GetFilePath() const;
 
 private:
+    const uintmax_t blocksize_ = 512;
     const boost::filesystem::path filepath_;
     const uintmax_t filesize_;
     const size_t max_blocks_amount_;
-    const uintmax_t blocksize_;
-    std::shared_ptr<IHash> hasher_;
-    std::vector<HashNode> hash_data_;
-    //    std::unique_ptr<std::ifstream> file_handle_;
-
-    /**
-     * @brief Открыть файл и перейти в место последнего нехешированного блока
-     */
-    void OpenHandle();
-
-    /**
-     * @brief Закрыть файл
-     */
-    void CloseHandle();
-
-    /**
-     * @brief Прочитать следующий блок данных из файла
-     * @return Указатель на следующий блок данных
-     */
-    std::unique_ptr<char[]> GetNextBlock();
+    const QDateTime birthTime_;
+    const QCryptographicHash::Algorithm hash_method_;
+    std::vector<QByteArray> hash_data_;
 
     /**
      * @brief Посчитать хеш до блока с индексом block_index включительно
@@ -83,13 +51,5 @@ private:
      * @param block_index - индекс блока, хеш которого надо получить
      * @return хеш блока
      */
-    HashNode GetHashNode(size_t block_index);
-};
-
-struct SetHash
-{
-    std::size_t operator()(const HashedFile& _node) const
-    {
-        return std::hash<std::string>()(_node.GetFilePath().string());
-    }
+    QByteArray GetHashNode(size_t block_index);
 };

@@ -210,7 +210,7 @@ private:
     QString _minFileSize;
     QString _minFileSizeDimension;
 
-    const QStringList _possibleHashes { "crc32", "md5", "sha1" };
+    const QStringList _possibleHashes { "md5", "sha1", "sha512" };
     const QStringList _possibleFileSizeDimensions { "b", "Kb", "Mb", "Gb" };
     const QString _windowName = "duplicate_finder";
     const int _windowWidth = 640;
