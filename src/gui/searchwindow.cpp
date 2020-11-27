@@ -534,6 +534,13 @@ void SearchWindow::runSearch()
                                _includeMasks,
                                _excludeMasks);
         std::unordered_map<std::string, std::unordered_set<std::string>> duplicates = finder.Find();
+        if (duplicates.empty())
+        {
+            QMessageBox msgBox;
+            msgBox.setText("No duplicates were found!");
+            msgBox.exec();
+            return;
+        }
         _resultWindow = QPointer<ResultWindow>(new ResultWindow(duplicates));
         _resultWindow->show();
     }
