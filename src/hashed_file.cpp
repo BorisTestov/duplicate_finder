@@ -1,40 +1,32 @@
 #include "hashed_file.h"
 
-bool HashNode::operator==(const HashNode& other) const
-{
-    return data == other.data;
-}
+#include <QFile>
+#include <QPointer>
 
-bool HashNode::operator!=(const HashNode& other) const
-{
-    return data != other.data;
-}
-
-HashedFile::HashedFile(boost::filesystem::path path, uintmax_t hash_blocksize, std::shared_ptr<IHash> hasher) :
+HashedFile::HashedFile(boost::filesystem::path path, QCryptographicHash::Algorithm hash_method) :
     filepath_(path),
     filesize_(boost::filesystem::file_size(filepath_)),
-    max_blocks_amount_((filesize_ + hash_blocksize - 1) / hash_blocksize),
-    blocksize_(hash_blocksize),
-    hasher_(hasher) {}
-
-bool HashedFile::Equal(HashedFile& other)
+    max_blocks_amount_((filesize_ + blocksize_ - 1) / blocksize_),
+    hash_method_(hash_method)
 {
-    if (filesize_ != other.filesize_)
+}
+
+bool HashedFile::Equal(const QPointer<HashedFile>& other)
+{
+    if (filesize_ != other->filesize_)
     {
         return false;
     }
+    bool isEqual = true;
     for (size_t i = 0; i < max_blocks_amount_; i++)
     {
-        if (GetHashNode(i) != other.GetHashNode(i))
+        if (GetHashNode(i) != other->GetHashNode(i))
         {
-            CloseHandle();
-            other.CloseHandle();
-            return false;
+            isEqual = false;
+            break;
         }
     }
-    CloseHandle();
-    other.CloseHandle();
-    return true;
+    return isEqual;
 }
 
 boost::filesystem::path HashedFile::GetFilePath() const
@@ -42,43 +34,21 @@ boost::filesystem::path HashedFile::GetFilePath() const
     return filepath_;
 }
 
-void HashedFile::OpenHandle()
-{
-    if (!file_handle_)
-    {
-        file_handle_ = std::make_unique<std::ifstream>(filepath_.string());
-        file_handle_->seekg(hash_data_.size() * blocksize_);
-    }
-}
-
-void HashedFile::CloseHandle()
-{
-    if (file_handle_ != nullptr)
-    {
-        file_handle_->close();
-        file_handle_.reset(nullptr);
-    }
-}
-
-std::unique_ptr<char[]> HashedFile::GetNextBlock()
-{
-    OpenHandle();
-    auto buffer = std::make_unique<char[]>(blocksize_);
-    file_handle_->read(buffer.get(), blocksize_);
-    return buffer;
-}
-
 void HashedFile::CalcHashUntil(size_t block_index)
 {
     while (hash_data_.size() <= block_index)
     {
-        auto data = GetNextBlock().get();
-        std::cout << GetFilePath() << " : " << std::string(data).size() << " " << std::endl;
-        hash_data_.emplace_back(HashNode { hasher_->Hash(data) });
+        QFile file(QString::fromStdString(filepath_.string()));
+        file.open(QIODevice::ReadOnly);
+        file.seek(blocksize_ * hash_data_.size());
+        QByteArray data = file.read(blocksize_);
+        file.close();
+        QByteArray hash = QCryptographicHash::hash(data, hash_method_);
+        hash_data_.emplace_back(hash);
     }
 }
 
-HashNode HashedFile::GetHashNode(size_t block_index)
+QByteArray HashedFile::GetHashNode(size_t block_index)
 {
     if (block_index >= max_blocks_amount_)
     {

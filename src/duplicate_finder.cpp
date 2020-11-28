@@ -1,11 +1,12 @@
 #include "duplicate_finder.h"
 
+#include <QtConcurrent/QtConcurrent>
+#include <common.h>
 #include <iostream>
-#include <utility>
 
 DuplicateFinder::DuplicateFinder(bool searchByHash,
                                  bool searchByMeta,
-                                 std::string hashType,
+                                 QCryptographicHash::Algorithm hash_method,
                                  size_t depth,
                                  unsigned int minSize,
                                  const QStringList& includeDirectories,
@@ -14,76 +15,71 @@ DuplicateFinder::DuplicateFinder(bool searchByHash,
                                  const QStringList& excludeMasks) :
     _searchByHash(searchByHash),
     _searchByMeta(searchByMeta),
-    _hashType(std::move(hashType)),
     _scan_depth(depth),
-    _min_file_size(minSize)
+    _min_file_size(minSize),
+    _hash_method(hash_method)
 {
-    TrySetHasher(_hashType);
-
-    std::vector<std::string> includePathsVector;
-    for (const QString& path : includeDirectories)
-    {
-        includePathsVector.push_back(path.toStdString());
-    }
+    std::vector<std::string> includePathsVector = common::toVectorOfStrings(includeDirectories);
+    std::vector<std::string> excludePathsVector = common::toVectorOfStrings(excludeDirectories);
     _include_dirs = TrySetDirs(includePathsVector);
-
-    std::vector<std::string> excludePathsVector;
-    for (const QString& path : excludeDirectories)
-    {
-        excludePathsVector.push_back(path.toStdString());
-    }
     _exclude_dirs = TrySetDirs(excludePathsVector);
-
-    for (const QString& mask : includeMasks)
-    {
-        _includeMasks.emplace_back(boost::regex(mask.toStdString()));
-    }
-
-    for (const QString& mask : excludeMasks)
-    {
-        _excludeMasks.emplace_back(boost::regex(mask.toStdString()));
-    }
+    _includeMasks = common::toVectorOfRegex(includeMasks);
+    _excludeMasks = common::toVectorOfRegex(excludeMasks);
 }
 
 std::unordered_map<std::string, std::unordered_set<std::string>> DuplicateFinder::Find()
 {
+    /**
+     * scan directories and add files to multimap
+     */
     for (const auto& dir : _include_dirs)
     {
         for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(dir))
         {
-            ScanPath(entry.path(), _scan_depth);
+            ScanDirectory(entry.path(), _scan_depth);
         }
     }
-    std::unordered_map<std::string, std::unordered_set<std::string>> duplicates;
-    if (_files.size() < 2)
+
+    /**
+     * get keys of multimap - all different sizes of files
+     */
+    std::vector<uintmax_t> keys;
+    for (const auto& pair : _filesToScan)
     {
-        return duplicates;
+        if (std::find(keys.begin(), keys.end(), pair.first) == keys.end())
+        {
+            keys.emplace_back(pair.first);
+        }
     }
-    for (auto first_file = std::begin(_files); first_file != end(_files); first_file++)
+
+    /**
+     * create separate vector for each filesize
+     * then run scan process in parallel
+     */
+    std::vector<QFuture<void>> processes;
+    for (const auto& key : keys)
     {
-        if (AlreadyInDuplicates(first_file->GetFilePath(), duplicates))
-        {
-            continue;
-        }
-        for (auto second_file = std::begin(_files); second_file != end(_files); second_file++)
-        {
-            if (AlreadyInDuplicates(second_file->GetFilePath(), duplicates))
-            {
-                continue;
-            }
-            if (first_file->GetFilePath() == second_file->GetFilePath())
-            {
-                continue;
-            }
-            if (first_file->Equal(*second_file))
-            {
-                auto first_file_path = first_file->GetFilePath().string();
-                auto second_file_path = second_file->GetFilePath().string();
-                duplicates[first_file_path].insert(second_file_path);
-            }
-        }
+        std::vector<QPointer<HashedFile>> files = _filesToScan[key];
+        processes.emplace_back(QtConcurrent::run(this, &DuplicateFinder::FindDuplicates, files));
     }
-    return duplicates;
+
+    /**
+     * wait for all processes
+     */
+    for (auto& process : processes)
+    {
+        process.waitForFinished();
+    }
+    for (const auto& duplicates : _totalDuplicates)
+    {
+        std::cout << duplicates.first << std::endl;
+        for (const auto& path : duplicates.second)
+        {
+            std::cout << path << std::endl;
+        }
+        std::cout << std::endl;
+    }
+    return _totalDuplicates;
 }
 
 std::vector<boost::filesystem::path> DuplicateFinder::TrySetDirs(const std::vector<std::string>& dirs)
@@ -105,24 +101,50 @@ std::vector<boost::filesystem::path> DuplicateFinder::TrySetDirs(const std::vect
     return directories;
 }
 
-std::shared_ptr<IHash> DuplicateFinder::TrySetHasher(const std::string& hasher)
+void DuplicateFinder::FindDuplicates(std::vector<QPointer<HashedFile>>& files)
 {
-    if (hasher == "md5")
+    if (files.size() < 2)
     {
-        return std::make_shared<MD5Hasher>();
+        return;
     }
-    if (hasher == "sha1")
+    std::unordered_map<std::string, std::unordered_set<std::string>> localDuplicates;
+    for (const QPointer<HashedFile>& first_file : files)
     {
-        return std::make_shared<SHA1Hasher>();
+        if (AlreadyInDuplicates(first_file->GetFilePath(), localDuplicates))
+        {
+            continue;
+        }
+        for (const QPointer<HashedFile>& second_file : files)
+        {
+            if (AlreadyInDuplicates(second_file->GetFilePath(), localDuplicates))
+            {
+                continue;
+            }
+            if (first_file->GetFilePath() == second_file->GetFilePath())
+            {
+                continue;
+            }
+            bool files_equal = true;
+            if (_searchByHash)
+            {
+                files_equal = files_equal and first_file->Equal(second_file);
+            }
+            if (_searchByMeta)
+            {
+                auto first_file_name = first_file->GetFilePath().filename().string();
+                auto second_file_name = second_file->GetFilePath().filename().string();
+                files_equal = files_equal and (first_file_name == second_file_name);
+            }
+            if (files_equal)
+            {
+                localDuplicates[first_file->GetFilePath().string()].insert(second_file->GetFilePath().string());
+                _totalDuplicates[first_file->GetFilePath().string()].insert(second_file->GetFilePath().string());
+            }
+        }
     }
-    if (hasher == "crc32")
-    {
-        return std::make_shared<CRC32Hasher>();
-    }
-    throw std::runtime_error("Hasher type doesn't recognized: " + hasher);
 }
 
-void DuplicateFinder::ScanPath(const boost::filesystem::path& path, size_t depth)
+void DuplicateFinder::ScanDirectory(const boost::filesystem::path& path, size_t depth)
 {
     if (boost::filesystem::exists(path) and not InExcludeDirs(path))
     {
@@ -134,7 +156,7 @@ void DuplicateFinder::ScanPath(const boost::filesystem::path& path, size_t depth
         {
             for (const boost::filesystem::directory_entry& dir : boost::filesystem::directory_iterator(path))
             {
-                ScanPath(dir.path(), depth - 1);
+                ScanDirectory(dir.path(), depth - 1);
             }
         }
     }
@@ -151,21 +173,21 @@ void DuplicateFinder::AddFile(const boost::filesystem::path& path)
     {
         return;
     }
-    if (not MasksSatisfied(path, _includeMasks))
+    if (not MasksSatisfied(path, _includeMasks) and not _includeMasks.empty())
     {
         return;
     }
-    if (MasksSatisfied(path, _excludeMasks))
+    if (MasksSatisfied(path, _excludeMasks) and not _excludeMasks.empty())
     {
         return;
     }
     std::string abs_path = weakly_canonical(absolute(path)).string();
-    if (_scanned_file_paths.find(abs_path) != _scanned_file_paths.end())
+    if (_scanned_file_paths.find(abs_path) == _scanned_file_paths.end())
     {
+        _scanned_file_paths.insert(abs_path);
+        _filesToScan[file_size(path)].emplace_back(QPointer<HashedFile>(new HashedFile(abs_path, _hash_method)));
         return;
     }
-    _scanned_file_paths.insert(abs_path);
-    _files.emplace_back(HashedFile(path.string(), _block_size, _hasher));
 }
 
 bool DuplicateFinder::InExcludeDirs(const boost::filesystem::path& path)
@@ -182,10 +204,6 @@ bool DuplicateFinder::InExcludeDirs(const boost::filesystem::path& path)
 
 bool DuplicateFinder::MasksSatisfied(const boost::filesystem::path& path, const std::vector<boost::regex>& masksToCheck)
 {
-    if (masksToCheck.empty())
-    {
-        return true;
-    }
     std::string filename = path.filename().string();
     for (const auto& mask : masksToCheck)
     {

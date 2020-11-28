@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gui/resultwindow.h"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFileDialog>
@@ -198,6 +200,8 @@ private:
 
     QPointer<QPushButton> _searchButton;
 
+    QPointer<ResultWindow> _resultWindow;
+
     QStringList _includeDirectories;
     QStringList _excludeDirectories;
     QStringList _includeMasks;
@@ -210,7 +214,7 @@ private:
     QString _minFileSize;
     QString _minFileSizeDimension;
 
-    const QStringList _possibleHashes { "crc32", "md5", "sha1" };
+    const QStringList _possibleHashes { "md5", "sha1", "sha512" };
     const QStringList _possibleFileSizeDimensions { "b", "Kb", "Mb", "Gb" };
     const QString _windowName = "duplicate_finder";
     const int _windowWidth = 640;
@@ -287,7 +291,7 @@ private slots:
     static void openMaskHelp();
 
     /**
-     * Запустить поиск дубликатов с заданными параметрами
+     * @brief Запустить поиск дубликатов с заданными параметрами
      */
     void runSearch();
 };

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "hash.h"
 #include "hashed_file.h"
 
+#include <QPointer>
 #include <QStringList>
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
@@ -14,9 +14,21 @@ class DuplicateFinder
 {
 public:
     DuplicateFinder() = delete;
+    /**
+     * @brief Конструктор класса для поиска файлов-дубликатов
+     * @param searchByHash - Поиск по хешу. Файл дубликат, если совпадают хеши
+     * @param searchByMeta  - Поиск по метаданным (имя и размер). Файл дубликат, если совпадают имя и размер
+     * @param hash_method - метод хеширования
+     * @param depth - глубина сканироания директорий
+     * @param minSize - минимальный размер сканируемого файла, в байтах
+     * @param includeDirectories - директории для сканирования
+     * @param excludeDirectories - директории, исключенные из сканирования
+     * @param includeMasks - маски, включенные в сканирование. Если не пустой список, то сканирует только то, что подходит под маску
+     * @param excludeMasks - маски, исключенные из сканирования
+     */
     DuplicateFinder(bool searchByHash,
                     bool searchByMeta,
-                    std::string hashType,
+                    QCryptographicHash::Algorithm hash_method,
                     size_t depth,
                     unsigned int minSize,
                     const QStringList& includeDirectories,
@@ -25,79 +37,77 @@ public:
                     const QStringList& excludeMasks);
 
     /**
-     * @brief Find duplicate files
-     * @return - map of duplicates: path to file and vector of duplicates
+     * @brief Найти файлы-дубликаты
+     * @return Список дубликатов в формате: [оригинал: набор дубликатов]
      */
     std::unordered_map<std::string, std::unordered_set<std::string>> Find();
 
 private:
     bool _searchByHash;
     bool _searchByMeta;
-    std::string _hashType;
 
     std::vector<boost::filesystem::path> _include_dirs;
     std::vector<boost::filesystem::path> _exclude_dirs;
     std::vector<boost::regex> _includeMasks;
     std::vector<boost::regex> _excludeMasks;
-    const size_t _block_size = 512;
     const size_t _scan_depth;
     const unsigned long long int _min_file_size;
-    std::shared_ptr<IHash> _hasher;
+    const QCryptographicHash::Algorithm _hash_method;
 
-    std::vector<HashedFile> _files;
     std::unordered_set<std::string> _scanned_file_paths;
 
-    std::multimap<uintmax_t, HashedFile> sizeMap;
+    std::unordered_map<uintmax_t, std::vector<QPointer<HashedFile>>> _filesToScan;
+    std::unordered_map<std::string, std::unordered_set<std::string>> _totalDuplicates;
 
     /**
-    * @brief Set directories from vector of strings
-    * @param dirs - vector of paths to directories
-    * @throw std::runtime_error if one of directories doesn't exists
-    * @return vector of boost paths
+    * @brief Установить список директорий из вектора строк (QStringList)
+    * @param dirs - директории
+    * @throw std::runtime_error, если одна из директорий не существует
+    * @return вектор boost::filesystem::path
+    * @todo обрабатывать исключение с помощью msgbox
     */
     std::vector<boost::filesystem::path> TrySetDirs(const std::vector<std::string>& dirs);
 
     /**
-     * @brief Set hasher type for scanning
-     * @param hasher - string of hasher name. Possible names: crc32/md5/sha1
-     * @throw std::runtime_error if hasher name not in possible names list
-     * @return shared_ptr to hasher
+     * @brief - искать дубликаты в добавленных для анализа файлов
+     * @param files - Вектор указателей на файлы для анализа
      */
-    std::shared_ptr<IHash> TrySetHasher(const std::string& hasher);
+    void FindDuplicates(std::vector<QPointer<HashedFile>>& files);
 
     /**
-     * @brief Scan directory
-     * @param path - path to scanning
-     * @param depth - depth of scanning, 0 - unlimited
+     * @brief Сканировать директорию для добавления файлов или для запуска сканированию поддиректорий
+     * @param path - Путь для сканирования
+     * @param depth - Глубина сканирования
      */
-    void ScanPath(const boost::filesystem::path& path, size_t depth);
+    void ScanDirectory(const boost::filesystem::path& path, size_t depth);
 
     /**
-     * @brief Add file to analyzing
-     * @param path - path to file
+     * @brief Добавить файл для абудущего анализа на дубликаты
+     * @param path - путь к файлу
      */
     void AddFile(const boost::filesystem::path& path);
 
     /**
-     * @brief Check if scanned path in excluded directories
-     * @param path - path to check
-     * @return true if path in excluded dirs, otherwise false
+     * @brief Проверить, находится ли сканируемая директория в списке исключенных
+     * @param path - директория для проверки
+     * @return true если находится, иначе false
      */
     bool InExcludeDirs(const boost::filesystem::path& path);
 
     /**
-     * @brief Check if path satisfied at least one mask from vector
-     * @param path - path to file
-     * @param masksToCheck  - vector of masks to check
-     * @return true if satisfied, otherwise false
+     * @brief Проверить, что файл удовлетворяет минимум одной маске из вектора масок
+     * @param path - путь к файлу
+     * @param masksToCheck  - вектор масок для проверки
+     * @return true если удовлетворяет, иначе false
      */
     bool MasksSatisfied(const boost::filesystem::path& path, const std::vector<boost::regex>& masksToCheck);
 
     /**
-     * @brief Check if file was already in duplicates
-     * @param path - path to file to check
-     * @param duplicates - duplicate that was found earlier
-     * @return true if file already in duplicates, otherwise false
+     * @brief Проверить, записан ли файл как дубликат
+     * @param path - Путь к файлу для проверки
+     * @param duplicates - Дубликаты для поиска
+     * @return true если файл уже является дубликатом, иначе false
+     * @todo можно заменить на флаг
      */
     bool AlreadyInDuplicates(const boost::filesystem::path& path,
                              std::unordered_map<std::string, std::unordered_set<std::string>>& duplicates);

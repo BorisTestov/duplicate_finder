@@ -2,7 +2,9 @@
 
 #include "duplicate_finder.h"
 
+#include <QCryptographicHash>
 #include <QDesktopServices>
+#include <QMessageBox>
 #include <QShortcut>
 #include <QTreeView>
 
@@ -246,7 +248,7 @@ void SearchWindow::createAdditionalSettingsButton()
 
 void SearchWindow::createSearchDepthLabel()
 {
-    _searchDepthLabel = new QLabel("Search depth (0 - unlimited)", this);
+    _searchDepthLabel = new QLabel("Search depth", this);
     _searchDepthLabel->setGeometry(230, 610, 180, 20);
     _searchDepthLabel->hide();
 }
@@ -461,6 +463,10 @@ void SearchWindow::runSearch()
 {
     if (_includeDirectories.empty())
     {
+        QMessageBox msgBox;
+        msgBox.setText(
+            "Please choose at least one directory for search");
+        msgBox.exec();
         return;
     }
     if (_searchByMeta or _searchByHash)
@@ -504,16 +510,46 @@ void SearchWindow::runSearch()
             }
             size *= BYTES_IN_KB * KB_IN_MB * MB_IN_GB;
         }
+        QCryptographicHash::Algorithm algorithm = QCryptographicHash::Md5;
+        if (_hashType == "md5")
+        {
+            algorithm = QCryptographicHash::Md5;
+        }
+        else if (_hashType == "sha1")
+        {
+            algorithm = QCryptographicHash::Sha1;
+        }
+        else if (_hashType == "sha512")
+        {
+            algorithm = QCryptographicHash::Sha512;
+        }
 
         DuplicateFinder finder(_searchByHash,
                                _searchByMeta,
-                               _hashType.toStdString(),
+                               algorithm,
                                depth,
                                size,
                                _includeDirectories,
                                _excludeDirectories,
                                _includeMasks,
                                _excludeMasks);
-        finder.Find();
+        std::unordered_map<std::string, std::unordered_set<std::string>> duplicates = finder.Find();
+        if (duplicates.empty())
+        {
+            QMessageBox msgBox;
+            msgBox.setText("No duplicates were found!");
+            msgBox.exec();
+            return;
+        }
+        _resultWindow = QPointer<ResultWindow>(new ResultWindow(duplicates));
+        _resultWindow->show();
+    }
+    else
+    {
+        QMessageBox msgBox;
+        msgBox.setText(
+            "Please choose at least one:\n"
+            "Use hash or Search by name and size");
+        msgBox.exec();
     }
 }
