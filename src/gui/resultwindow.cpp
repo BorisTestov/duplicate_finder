@@ -22,10 +22,10 @@ void ResultWindow::createDuplicatesWidget()
 {
     _duplicatesWidget = new QListWidget(this);
     _duplicatesWidget->setGeometry(0, 0, _windowWidth, _windowHeight - 50);
-    readWidgetContent();
+    loadWidgetContent();
 }
 
-void ResultWindow::readWidgetContent()
+void ResultWindow::loadWidgetContent()
 {
     for (const auto& duplicate : _duplicates)
     {
@@ -72,6 +72,22 @@ void ResultWindow::createDeleteAllButton()
     connect(_deleteAllButton.data(), SIGNAL(released()), this, SLOT(deleteAllDuplicates()));
 }
 
+void ResultWindow::createDeleteSelectedButton()
+{
+    _deleteSelectedButton = new QPushButton(this);
+    _deleteSelectedButton->setText("Delete selected\nduplicates");
+    _deleteSelectedButton->setGeometry(175, 550, 150, 50);
+    connect(_deleteSelectedButton.data(), SIGNAL(released()), this, SLOT(deleteSelectedDuplicates()));
+}
+
+void ResultWindow::createClearSelectionButton()
+{
+    _clearSelectionButton = new QPushButton(this);
+    _clearSelectionButton->setText("Clear selection");
+    _clearSelectionButton->setGeometry(0, 550, 150, 50);
+    connect(_clearSelectionButton.data(), SIGNAL(released()), this, SLOT(clearSelection()));
+}
+
 void ResultWindow::deleteAllDuplicates()
 {
     int totalDuplicates = 0;
@@ -109,14 +125,6 @@ void ResultWindow::deleteAllDuplicates()
         _duplicatesWidget->clear();
         createDuplicatesWidget();
     }
-}
-
-void ResultWindow::createClearSelectionButton()
-{
-    _clearSelectionButton = new QPushButton(this);
-    _clearSelectionButton->setText("Clear selection");
-    _clearSelectionButton->setGeometry(0, 550, 150, 50);
-    connect(_clearSelectionButton.data(), SIGNAL(released()), this, SLOT(clearSelection()));
 }
 
 void ResultWindow::deleteSelectedDuplicates()
@@ -167,8 +175,7 @@ void ResultWindow::deleteSelectedDuplicates()
             }
         }
         _duplicatesWidget->clear();
-        readWidgetContent();
-        //        createDuplicatesWidget();
+        loadWidgetContent();
     }
 }
 
@@ -186,12 +193,4 @@ void ResultWindow::clearSelection()
             item->setCheckState(Qt::Unchecked);
         }
     }
-}
-
-void ResultWindow::createDeleteSelectedButton()
-{
-    _deleteSelectedButton = new QPushButton(this);
-    _deleteSelectedButton->setText("Delete selected\nduplicates");
-    _deleteSelectedButton->setGeometry(175, 550, 150, 50);
-    connect(_deleteSelectedButton.data(), SIGNAL(released()), this, SLOT(deleteSelectedDuplicates()));
 }

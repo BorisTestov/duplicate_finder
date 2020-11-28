@@ -14,6 +14,18 @@ class DuplicateFinder
 {
 public:
     DuplicateFinder() = delete;
+    /**
+     * @brief Конструктор класса для поиска файлов-дубликатов
+     * @param searchByHash - Поиск по хешу. Файл дубликат, если совпадают хеши
+     * @param searchByMeta  - Поиск по метаданным (имя и размер). Файл дубликат, если совпадают имя и размер
+     * @param hash_method - метод хеширования
+     * @param depth - глубина сканироания директорий
+     * @param minSize - минимальный размер сканируемого файла, в байтах
+     * @param includeDirectories - директории для сканирования
+     * @param excludeDirectories - директории, исключенные из сканирования
+     * @param includeMasks - маски, включенные в сканирование. Если не пустой список, то сканирует только то, что подходит под маску
+     * @param excludeMasks - маски, исключенные из сканирования
+     */
     DuplicateFinder(bool searchByHash,
                     bool searchByMeta,
                     QCryptographicHash::Algorithm hash_method,
@@ -25,8 +37,8 @@ public:
                     const QStringList& excludeMasks);
 
     /**
-     * @brief Find duplicate files
-     * @return List of duplicates
+     * @brief Найти файлы-дубликаты
+     * @return Список дубликатов в формате: [оригинал: набор дубликатов]
      */
     std::unordered_map<std::string, std::unordered_set<std::string>> Find();
 
@@ -48,52 +60,54 @@ private:
     std::unordered_map<std::string, std::unordered_set<std::string>> _totalDuplicates;
 
     /**
-    * @brief Set directories from vector of strings
-    * @param dirs - vector of paths to directories
-    * @throw std::runtime_error if one of directories doesn't exists
-    * @return vector of boost paths
+    * @brief Установить список директорий из вектора строк (QStringList)
+    * @param dirs - директории
+    * @throw std::runtime_error, если одна из директорий не существует
+    * @return вектор boost::filesystem::path
+    * @todo обрабатывать исключение с помощью msgbox
     */
     std::vector<boost::filesystem::path> TrySetDirs(const std::vector<std::string>& dirs);
 
     /**
-     * @brief Scan vector of (pointer to) files of same size to find duplicates
-     * @param files - files for scanning
+     * @brief - искать дубликаты в добавленных для анализа файлов
+     * @param files - Вектор указателей на файлы для анализа
      */
     void FindDuplicates(std::vector<QPointer<HashedFile>>& files);
 
     /**
-     * @brief Scan directory for adding files for future duplicate finding or running scan of subdirectories
-     * @param path - path to scanning
-     * @param depth - depth of scanning
+     * @brief Сканировать директорию для добавления файлов или для запуска сканированию поддиректорий
+     * @param path - Путь для сканирования
+     * @param depth - Глубина сканирования
      */
     void ScanDirectory(const boost::filesystem::path& path, size_t depth);
 
     /**
-     * @brief Add file to analyzing
-     * @param path - path to file
+     * @brief Добавить файл для абудущего анализа на дубликаты
+     * @param path - путь к файлу
      */
     void AddFile(const boost::filesystem::path& path);
 
     /**
-     * @brief Check if scanned path in excluded directories
-     * @param path - path to check
-     * @return true if path in excluded dirs, otherwise false
+     * @brief Проверить, находится ли сканируемая директория в списке исключенных
+     * @param path - директория для проверки
+     * @return true если находится, иначе false
      */
     bool InExcludeDirs(const boost::filesystem::path& path);
 
     /**
-     * @brief Check if path satisfied at least one mask from vector
-     * @param path - path to file
-     * @param masksToCheck  - vector of masks to check
-     * @return true if satisfied, otherwise false
+     * @brief Проверить, что файл удовлетворяет минимум одной маске из вектора масок
+     * @param path - путь к файлу
+     * @param masksToCheck  - вектор масок для проверки
+     * @return true если удовлетворяет, иначе false
      */
     bool MasksSatisfied(const boost::filesystem::path& path, const std::vector<boost::regex>& masksToCheck);
 
     /**
-     * @brief Check if file was already in duplicates
-     * @param path - path to file to check
-     * @param duplicates - duplicate that was found earlier
-     * @return true if file already in duplicates, otherwise false
+     * @brief Проверить, записан ли файл как дубликат
+     * @param path - Путь к файлу для проверки
+     * @param duplicates - Дубликаты для поиска
+     * @return true если файл уже является дубликатом, иначе false
+     * @todo можно заменить на флаг
      */
     bool AlreadyInDuplicates(const boost::filesystem::path& path,
                              std::unordered_map<std::string, std::unordered_set<std::string>>& duplicates);

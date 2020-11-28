@@ -1,6 +1,7 @@
 #include "duplicate_finder.h"
 
 #include <QtConcurrent/QtConcurrent>
+#include <common.h>
 #include <iostream>
 
 DuplicateFinder::DuplicateFinder(bool searchByHash,
@@ -18,29 +19,12 @@ DuplicateFinder::DuplicateFinder(bool searchByHash,
     _min_file_size(minSize),
     _hash_method(hash_method)
 {
-    std::vector<std::string> includePathsVector;
-    for (const QString& path : includeDirectories)
-    {
-        includePathsVector.push_back(path.toStdString());
-    }
+    std::vector<std::string> includePathsVector = common::toVectorOfStrings(includeDirectories);
+    std::vector<std::string> excludePathsVector = common::toVectorOfStrings(excludeDirectories);
     _include_dirs = TrySetDirs(includePathsVector);
-
-    std::vector<std::string> excludePathsVector;
-    for (const QString& path : excludeDirectories)
-    {
-        excludePathsVector.push_back(path.toStdString());
-    }
     _exclude_dirs = TrySetDirs(excludePathsVector);
-
-    for (const QString& mask : includeMasks)
-    {
-        _includeMasks.emplace_back(boost::regex(mask.toStdString()));
-    }
-
-    for (const QString& mask : excludeMasks)
-    {
-        _excludeMasks.emplace_back(boost::regex(mask.toStdString()));
-    }
+    _includeMasks = common::toVectorOfRegex(includeMasks);
+    _excludeMasks = common::toVectorOfRegex(excludeMasks);
 }
 
 std::unordered_map<std::string, std::unordered_set<std::string>> DuplicateFinder::Find()
@@ -115,6 +99,49 @@ std::vector<boost::filesystem::path> DuplicateFinder::TrySetDirs(const std::vect
         directories.push_back(path);
     }
     return directories;
+}
+
+void DuplicateFinder::FindDuplicates(std::vector<QPointer<HashedFile>>& files)
+{
+    if (files.size() < 2)
+    {
+        return;
+    }
+    std::unordered_map<std::string, std::unordered_set<std::string>> localDuplicates;
+    for (const QPointer<HashedFile>& first_file : files)
+    {
+        if (AlreadyInDuplicates(first_file->GetFilePath(), localDuplicates))
+        {
+            continue;
+        }
+        for (const QPointer<HashedFile>& second_file : files)
+        {
+            if (AlreadyInDuplicates(second_file->GetFilePath(), localDuplicates))
+            {
+                continue;
+            }
+            if (first_file->GetFilePath() == second_file->GetFilePath())
+            {
+                continue;
+            }
+            bool files_equal = true;
+            if (_searchByHash)
+            {
+                files_equal = files_equal and first_file->Equal(second_file);
+            }
+            if (_searchByMeta)
+            {
+                auto first_file_name = first_file->GetFilePath().filename().string();
+                auto second_file_name = second_file->GetFilePath().filename().string();
+                files_equal = files_equal and (first_file_name == second_file_name);
+            }
+            if (files_equal)
+            {
+                localDuplicates[first_file->GetFilePath().string()].insert(second_file->GetFilePath().string());
+                _totalDuplicates[first_file->GetFilePath().string()].insert(second_file->GetFilePath().string());
+            }
+        }
+    }
 }
 
 void DuplicateFinder::ScanDirectory(const boost::filesystem::path& path, size_t depth)
@@ -202,47 +229,4 @@ bool DuplicateFinder::AlreadyInDuplicates(const boost::filesystem::path& path,
         }
     }
     return already_in_duplicates;
-}
-
-void DuplicateFinder::FindDuplicates(std::vector<QPointer<HashedFile>>& files)
-{
-    if (files.size() < 2)
-    {
-        return;
-    }
-    std::unordered_map<std::string, std::unordered_set<std::string>> localDuplicates;
-    for (const QPointer<HashedFile>& first_file : files)
-    {
-        if (AlreadyInDuplicates(first_file->GetFilePath(), localDuplicates))
-        {
-            continue;
-        }
-        for (const QPointer<HashedFile>& second_file : files)
-        {
-            if (AlreadyInDuplicates(second_file->GetFilePath(), localDuplicates))
-            {
-                continue;
-            }
-            if (first_file->GetFilePath() == second_file->GetFilePath())
-            {
-                continue;
-            }
-            bool files_equal = true;
-            if (_searchByHash)
-            {
-                files_equal = files_equal and first_file->Equal(second_file);
-            }
-            if (_searchByMeta)
-            {
-                auto first_file_name = first_file->GetFilePath().filename().string();
-                auto second_file_name = second_file->GetFilePath().filename().string();
-                files_equal = files_equal and (first_file_name == second_file_name);
-            }
-            if (files_equal)
-            {
-                localDuplicates[first_file->GetFilePath().string()].insert(second_file->GetFilePath().string());
-                _totalDuplicates[first_file->GetFilePath().string()].insert(second_file->GetFilePath().string());
-            }
-        }
-    }
 }
