@@ -8,11 +8,8 @@ environment:
 
 version: ${MAJOR}.${MINOR}.{build}
 
-branches:
-  only:
-    - master
-
-skip_tags: true
+on:
+  APPVEYOR_REPO_TAG: true
 
 matrix:
   fast_finish: true
@@ -71,8 +68,6 @@ for:
       - sudo rm -rf $PROJECT_NAME.github.io
       - cd /home/appveyor/projects/duplicate-finder/build
       - cmake --build . --target package
-      - git tag $APPVEYOR_BUILD_VERSION --force
-      - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
 
     artifacts:
       - path: build/$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
@@ -87,7 +82,7 @@ for:
         draft: false
         prerelease: false
         on:
-          branch: master
+          APPVEYOR_REPO_TAG: true
       - provider: BinTray
         username: boristestov
         api_key: $BINTRAY_API_KEY
@@ -100,4 +95,4 @@ for:
         override: true
         explode: true
         on:
-          branch: master
+          APPVEYOR_REPO_TAG: true
