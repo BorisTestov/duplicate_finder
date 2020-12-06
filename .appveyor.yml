@@ -3,8 +3,6 @@ environment:
   MAJOR: 0
   MINOR: 1
   matrix:
-    - job_name: Windows build
-      appveyor_build_worker_image: Visual Studio 2019
     - job_name: Linux build
       appveyor_build_worker_image: Ubuntu1804
 
@@ -12,7 +10,7 @@ version: ${MAJOR}.${MINOR}.{build}
 
 branches:
   only:
-    - appveyor
+    - master
 
 skip_tags: true
 
@@ -89,7 +87,7 @@ for:
         draft: false
         prerelease: false
         on:
-          branch: appveyor
+          branch: master
       - provider: BinTray
         username: boristestov
         api_key: $BINTRAY_API_KEY
@@ -102,10 +100,4 @@ for:
         override: true
         explode: true
         on:
-          branch: appveyor
-
-  - matrix:
-      only:
-        - job_name: Windows build
-    build_script:
-      - ps: Write-Host "This is windows"
+          branch: master
