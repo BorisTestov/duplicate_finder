@@ -1,20 +1,8 @@
 environment:
   PROJECT_NAME: duplicate_finder
-  MAJOR: 0
-  MINOR: 1
   matrix:
-    - job_name: Windows build
-      appveyor_build_worker_image: Visual Studio 2019
     - job_name: Linux build
       appveyor_build_worker_image: Ubuntu1804
-
-version: ${MAJOR}.${MINOR}.{build}
-
-branches:
-  only:
-    - appveyor
-
-skip_tags: true
 
 matrix:
   fast_finish: true
@@ -73,8 +61,6 @@ for:
       - sudo rm -rf $PROJECT_NAME.github.io
       - cd /home/appveyor/projects/duplicate-finder/build
       - cmake --build . --target package
-      - git tag $APPVEYOR_BUILD_VERSION --force
-      - git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.git --tags
 
     artifacts:
       - path: build/$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
@@ -85,15 +71,17 @@ for:
         skip_cleanup: true
         release: $APPVEYOR_BUILD_VERSION-Linux.deb
         auth_token: $GITHUB_TOKEN
-        artifact: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+
+        artifact: $PROJECT_NAME-$APPVEYOR_REPO_TAG_NAME-Linux.deb
         draft: false
         prerelease: false
         on:
-          branch: appveyor
+          branch: master
+          APPVEYOR_REPO_TAG: true
       - provider: BinTray
         username: boristestov
         api_key: $BINTRAY_API_KEY
-        artifact: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+        artifact: $PROJECT_NAME-$APPVEYOR_REPO_TAG_NAME-Linux.deb
         subject: boristestov
         repo: duplicate_finder
         package: linux
@@ -102,10 +90,5 @@ for:
         override: true
         explode: true
         on:
-          branch: appveyor
-
-  - matrix:
-      only:
-        - job_name: Windows build
-    build_script:
-      - ps: Write-Host "This is windows"
+          branch: master
+          APPVEYOR_REPO_TAG: true
