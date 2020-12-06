@@ -9,12 +9,13 @@ version: $(APPVEYOR_REPO_TAG_NAME)
 matrix:
   fast_finish: true
 
+only:
+  APPVEYOR_REPO_TAG: true
+
 for:
   - matrix:
       only:
         - job_name: Linux build
-      on:
-        APPVEYOR_REPO_TAG: true
 
     before_build:
       - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
