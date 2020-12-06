@@ -56,22 +56,21 @@ for:
       - git rm -rf * || echo "Nothing to delete"
       - mv -v ../../doc/html/* .
       - git add .
-      - git commit -m "Documentation from travis-ci build $TRAVIS_BUILD_NUMBER" && git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git || echo "Nothing to commit"
+      - git commit -m "Documentation from appveyor build" && git push https://boristestov:$GITHUB_TOKEN@github.com/boristestov/$PROJECT_NAME.github.io.git || echo "Nothing to commit"
       - cd ..
       - sudo rm -rf $PROJECT_NAME.github.io
       - cd /home/appveyor/projects/duplicate-finder/build
       - cmake --build . --target package
 
     artifacts:
-      - path: build/$PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
-        name: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+      - path: build/$PROJECT_NAME-$APPVEYOR_REPO_TAG_NAME-Linux.deb
+        name: $PROJECT_NAME-$APPVEYOR_REPO_TAG_NAME-Linux.deb
 
     deploy:
       - provider: GitHub
         skip_cleanup: true
-        release: $APPVEYOR_BUILD_VERSION-Linux.deb
+        release: $APPVEYOR_REPO_TAG_NAME-Linux.deb
         auth_token: $GITHUB_TOKEN
-
         artifact: $PROJECT_NAME-$APPVEYOR_REPO_TAG_NAME-Linux.deb
         draft: false
         prerelease: false
@@ -85,7 +84,7 @@ for:
         subject: boristestov
         repo: duplicate_finder
         package: linux
-        version: $APPVEYOR_BUILD_VERSION
+        version: $APPVEYOR_REPO_TAG_NAME
         publish: true
         override: true
         explode: true
