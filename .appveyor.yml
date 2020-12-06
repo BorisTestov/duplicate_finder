@@ -11,6 +11,8 @@ version: ${MAJOR}.${MINOR}.{build}
 matrix:
   fast_finish: true
 
+skip_tags: true
+
 for:
   - matrix:
       only:
@@ -80,7 +82,6 @@ for:
         prerelease: false
         on:
           branch: master
-          APPVEYOR_REPO_TAG: true
       - provider: BinTray
         username: boristestov
         api_key: $BINTRAY_API_KEY
@@ -94,4 +95,3 @@ for:
         explode: true
         on:
           branch: master
-          APPVEYOR_REPO_TAG: true
