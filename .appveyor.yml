@@ -1,12 +1,10 @@
 environment:
   PROJECT_NAME: duplicate_finder
-  MAJOR: 0
-  MINOR: 1
   matrix:
     - job_name: Linux build
       appveyor_build_worker_image: Ubuntu1804
 
-version: ${MAJOR}.${MINOR}.{build}
+version: $(APPVEYOR_REPO_TAG_NAME)
 
 matrix:
   fast_finish: true
@@ -78,7 +76,8 @@ for:
         skip_cleanup: true
         release: $APPVEYOR_BUILD_VERSION-Linux.deb
         auth_token: $GITHUB_TOKEN
-        artifact: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+
+        artifact: $PROJECT_NAME-$APPVEYOR_REPO_TAG_NAME-Linux.deb
         draft: false
         prerelease: false
         on:
@@ -86,7 +85,7 @@ for:
       - provider: BinTray
         username: boristestov
         api_key: $BINTRAY_API_KEY
-        artifact: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
+        artifact: $PROJECT_NAME-$APPVEYOR_REPO_TAG_NAME-Linux.deb
         subject: boristestov
         repo: duplicate_finder
         package: linux
