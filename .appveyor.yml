@@ -4,8 +4,6 @@ environment:
     - job_name: Linux build
       appveyor_build_worker_image: Ubuntu1804
 
-version: $(APPVEYOR_REPO_TAG_NAME)
-
 matrix:
   fast_finish: true
 
