@@ -75,7 +75,7 @@ for:
     deploy:
       - provider: GitHub
         skip_cleanup: true
-        release: $APPVEYOR_BUILD_VERSION-Linux.deb
+        release: $APPVEYOR_BUILD_VERSION
         auth_token: $GITHUB_TOKEN
         artifact: $PROJECT_NAME-$APPVEYOR_BUILD_VERSION-Linux.deb
         draft: false
