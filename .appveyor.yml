@@ -13,9 +13,8 @@ for:
   - matrix:
       only:
         - job_name: Linux build
-
-    on:
-      APPVEYOR_REPO_TAG: true
+      on:
+        APPVEYOR_REPO_TAG: true
 
     before_build:
       - echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" | sudo tee -a /etc/apt/sources.list
