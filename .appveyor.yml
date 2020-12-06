@@ -9,7 +9,8 @@ version: $(APPVEYOR_REPO_TAG_NAME)
 matrix:
   fast_finish: true
 
-only:
+on:
+  branch: master
   APPVEYOR_REPO_TAG: true
 
 for:
