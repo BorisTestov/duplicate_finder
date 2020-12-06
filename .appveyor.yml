@@ -9,11 +9,6 @@ version: $(APPVEYOR_REPO_TAG_NAME)
 matrix:
   fast_finish: true
 
-branches:
-  only:
-    branch: master
-    APPVEYOR_REPO_TAG: true
-
 for:
   - matrix:
       only:
@@ -83,6 +78,7 @@ for:
         draft: false
         prerelease: false
         on:
+          branch: master
           APPVEYOR_REPO_TAG: true
       - provider: BinTray
         username: boristestov
@@ -96,4 +92,5 @@ for:
         override: true
         explode: true
         on:
+          branch: master
           APPVEYOR_REPO_TAG: true
